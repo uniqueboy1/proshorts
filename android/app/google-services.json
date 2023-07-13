@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "37800297873",
+    "project_id": "proshorts-a4484",
+    "storage_bucket": "proshorts-a4484.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:37800297873:android:b61426e091cd997f9bc630",
+        "android_client_info": {
+          "package_name": "com.example.pro_shorts"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "37800297873-3pregse65s6s3sptbasbkjr3paqc0re4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE3sslz4NznjulFs-MFZtQgqliyKRgICs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "37800297873-3pregse65s6s3sptbasbkjr3paqc0re4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
