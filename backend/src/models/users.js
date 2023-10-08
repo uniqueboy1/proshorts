@@ -72,6 +72,10 @@ let schema = new mongoose.Schema({
           ref: "uploaded_videos",
           required: true,
         },
+        isWatchHistoryDeleted: {
+          type: Boolean,
+          default: false,
+        },
       },
     ],
   },
@@ -94,6 +98,43 @@ let schema = new mongoose.Schema({
           type: mongoose.Schema.Types.ObjectId,
           ref: "uploaded_videos",
           required: true,
+        },
+      },
+    ],
+  },
+
+  likedComments: {
+    type: [
+      {
+        commentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+        },
+      },
+    ],
+  },
+
+  dislikedComments: {
+    type: [
+      {
+        commentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+        },
+      },
+    ],
+  },
+
+  notifications: {
+    type: [
+      {
+        message: {
+          type: String,
+          required: true,
+        },
+        notificationTime: {
+          type: Date,
+          default: Date.now,
         },
       },
     ],

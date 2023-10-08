@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
 import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/profile/view_other_profile.dart';
 
@@ -8,7 +9,9 @@ import '../../controllers/users.dart';
 import '../../get/profile/get_followers_following.dart';
 
 class FollowersFollowing extends StatelessWidget {
-  FollowersFollowing({Key? key}) : super(key: key);
+  bool isProfileSetup;
+  FollowersFollowing({Key? key, required this.isProfileSetup})
+      : super(key: key);
   FollowersFollowingController followersFollowingController =
       Get.put(FollowersFollowingController());
 
@@ -23,11 +26,14 @@ class FollowersFollowing extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              TextButton(
-                  onPressed: () {
-                    followersFollowingController.toogleFollowersFollowing(true);
-                  },
-                  child: const Text("Followers")),
+              isProfileSetup
+                  ? TextButton(
+                      onPressed: () {
+                        followersFollowingController
+                            .toogleFollowersFollowing(true);
+                      },
+                      child: const Text("Followers"))
+                  : SizedBox(),
               TextButton(
                   onPressed: () {
                     followersFollowingController
@@ -47,7 +53,6 @@ class FollowersFollowing extends StatelessWidget {
 
 class Followers extends StatelessWidget {
   Followers({Key? key}) : super(key: key);
-  Map<String, dynamic> myProfile = MYPROFILE;
   List followers = [];
 
   Future fetchFollowers() async {
@@ -57,7 +62,7 @@ class Followers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List followers = myProfile['followers'];
+    List followers = MYPROFILE['followers'];
     print("followers : $followers");
     return FutureBuilder(
         future: fetchFollowers(), // The Future<T> that you want to monitor
@@ -80,8 +85,7 @@ class Followers extends StatelessWidget {
                                           ['profileInformation'] !=
                                       null
                                   ? Get.to(ViewOtherProfile(
-                                      userInformation: followers[index]
-                                          ['userInformation'],
+                                      userId: followers[index]['_id'],
                                     ))
                                   : null;
                             },
@@ -184,8 +188,8 @@ class Following extends StatelessWidget {
                           return GestureDetector(
                             onTap: () {
                               Get.to(ViewOtherProfile(
-                                  userInformation: followersFollowingController
-                                      .following[index]['userInformation']));
+                                  userId: followersFollowingController
+                                      .following[index]['_id']));
                             },
                             child: Card(
                               child: Padding(
@@ -222,7 +226,7 @@ class Following extends StatelessWidget {
                                       ],
                                     ),
                                     Text(
-                                        "${followersFollowingController.following[index]['userInformation']['following'].length} Followers"),
+                                        "${followersFollowingController.following[index]['userInformation']['followers'].length} Followers"),
                                     ElevatedButton(
                                         onPressed: () async {
                                           await UserMethods()

@@ -60,10 +60,10 @@ class ProfileController {
     }
   }
 
-  async readProfileByField(req, res) {
+  async readProfilesByField(req, res) {
     try {
-      const { email } = req.params;
-      const response = await profile.find({ email });
+      const { field, value } = req.params;
+      const response = await profile.find({ [field] : value });
       res.json({
         success: true,
         message: "Profile",

@@ -2,20 +2,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:path/path.dart';
 import 'package:pro_shorts/constants.dart';
 import 'package:pro_shorts/controllers/users.dart';
+import 'package:pro_shorts/get/home_screen/get_comment.dart';
 import 'package:pro_shorts/get/home_screen/get_video_screen.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/home_screen/make_notes.dart';
 import 'package:pro_shorts/views/home_screen/comment.dart';
+import 'package:pro_shorts/views/profile/own_profile_screen.dart';
+import 'package:pro_shorts/views/profile/view_other_profile.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
-
 import '../../controllers/video.dart';
 
 class VideoScreen extends StatefulWidget {
-  Map<String, dynamic> video;
-  VideoScreen({Key? key, required this.video}) : super(key: key);
+  final Map<String, dynamic> video;
+  const VideoScreen({Key? key, required this.video}) : super(key: key);
 
   @override
   State<VideoScreen> createState() => _VideoScreenState();
@@ -23,32 +25,78 @@ class VideoScreen extends StatefulWidget {
 
 class _VideoScreenState extends State<VideoScreen> {
   late VideoScreenController videoScreenController;
+
   @override
   void initState() {
     videoScreenController = Get.put(VideoScreenController());
-    // videoScreenController.initializeVideoDetails(widget.video);
     super.initState();
   }
 
-  //  @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  //   videoScreenController.initializeVideoDetails(widget.video);
-  // }
+  Future<int> fetchViewsOfVideo() async {
+    int views = await VideoMethods()
+        .fetchSpecificVideosField("_id", widget.video['_id'], "viewsCount");
+    return views;
+  }
 
-  @override
-  void dispose() {
-    super.dispose();
-    // videoScreenController.controller.dispose();
+  Future updateViews(int views) async {
+    await VideoMethods().editVideo(widget.video['_id'], {"viewsCount": views});
+    await UserMethods().editUserArrayField(MYPROFILE['_id'],
+        {"videoInformation": widget.video['_id']}, "watchHistory");
+  }
+
+  Future updateWatchHistory(String videoId) async {
+    Map<String, dynamic> user = await UserMethods().checkValueExistInArray(
+        MYPROFILE['_id'],
+        "watchHistory",
+        "videoInformation",
+        widget.video['_id']);
+    bool isWatchHistoryDeleted =
+        user['watchHistory'][0]['isWatchHistoryDeleted'];
+    if (isWatchHistoryDeleted) {
+      await UserMethods().updateArrayField(MYPROFILE['_id'], "watchHistory",
+          "videoInformation", videoId, {"isWatchHistoryDeleted": false});
+    }
+  }
+
+  Future<bool> isUserAlreadyWatchedVideo() async {
+    Map<String, dynamic> user = await UserMethods().checkValueExistInArray(
+        MYPROFILE['_id'],
+        "watchHistory",
+        "videoInformation",
+        widget.video['_id']);
+    return user['watchHistory'].isNotEmpty;
+  }
+
+  void countViews() async {
+    if (MYPROFILE['_id'] != widget.video['userInformation']['_id']) {
+      videoScreenController.controller.addListener(() async {
+        if (videoScreenController.controller.value.isPlaying) {
+          Duration videoLength =
+              videoScreenController.controller.value.duration;
+          Duration watchedDuration =
+              videoScreenController.controller.value.position;
+          if (watchedDuration >= videoLength * 0.5) {
+            bool isAlreadyWatched = await isUserAlreadyWatchedVideo();
+            if (!isAlreadyWatched) {
+              int views = await fetchViewsOfVideo();
+              views = views + 1;
+              videoScreenController.viewsCount.value = views;
+              await updateViews(views);
+            } else {
+              updateWatchHistory(widget.video['_id']);
+            }
+          }
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // videoScreenController.playVideo();
+    countViews();
 
     Size size = MediaQuery.of(context).size;
-    double appBarHeight = AppBar().preferredSize.height;
-    double bottomNavBarHeight = AppBar().preferredSize.height;
     return GestureDetector(
       onLongPress: () {
         showDialog(
@@ -101,7 +149,7 @@ class _VideoScreenState extends State<VideoScreen> {
 }
 
 class ReportWatchLater extends StatelessWidget {
-  Map<String, dynamic> video;
+  final Map<String, dynamic> video;
   ReportWatchLater({Key? key, required this.video}) : super(key: key);
   final ReportReason? selectedReportReason = ReportReason.notProgramming;
   bool isWatchLaterIDExists = false;
@@ -113,8 +161,9 @@ class ReportWatchLater extends StatelessWidget {
     List watchLater = await UserMethods()
         .fetchSpecificUserField("email", email, "watchLater");
     print("watch later : $watchLater");
-    isWatchLaterIDExists =
-        watchLater.any((video) => video['videoInformation'] == id);
+    Map<String, dynamic> user = await UserMethods().checkValueExistInArray(
+        MYPROFILE['_id'], "watchLater", "videoInformation", id);
+    isWatchLaterIDExists = user['watchLater'].isNotEmpty;
   }
 
   void addToWatchLater() async {
@@ -124,11 +173,11 @@ class ReportWatchLater extends StatelessWidget {
     if (!isWatchLaterIDExists) {
       await UserMethods()
           .editUserArrayField(MYPROFILE['_id'], videoInformation, "watchLater");
-      Get.snackbar("Watch Later", "Video added to watch later");
+      showSnackBar("Watch Later", "Video added to watch later");
     } else {
       await UserMethods().deleteUserArrayField(
           MYPROFILE['_id'], videoInformation, "watchLater");
-      Get.snackbar("Watch Later", "Video removed from watch later");
+      showSnackBar("Watch Later", "Video removed from watch later");
     }
   }
 
@@ -160,8 +209,11 @@ class ReportWatchLater extends StatelessWidget {
                   child: Card(
                     child: ListTile(
                       onTap: () {
-                        addToWatchLater();
-                        Get.back();
+                        if (MYPROFILE['_id'] !=
+                            video['userInformation']['_id']) {
+                          addToWatchLater();
+                          Get.back();
+                        }
                       },
                       title: const Text("Watch Later"),
                       leading: const Icon(Icons.watch_later),
@@ -178,15 +230,18 @@ class ReportWatchLater extends StatelessWidget {
                   child: Card(
                     child: ListTile(
                       onTap: () {
-                        if (!isReportMessageIDExists) {
-                          showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (context) {
-                                return ReportVideo(
-                                  video: video,
-                                );
-                              });
+                        if (MYPROFILE['_id'] !=
+                            video['userInformation']['_id']) {
+                          if (!isReportMessageIDExists) {
+                            showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return ReportVideo(
+                                    video: video,
+                                  );
+                                });
+                          }
                         }
                       },
                       title: const Text("Report"),
@@ -297,18 +352,6 @@ class _ReportVideoState extends State<ReportVideo> {
                 onPressed: () {
                   reportVideo();
                   Navigator.popUntil(context, (route) => route.isFirst);
-
-                  // final snackBar = SnackBar(
-                  //   shape: RoundedRectangleBorder(
-                  //     borderRadius: BorderRadius.circular(10.0),
-                  //   ),
-                  //   backgroundColor: Colors.green,
-                  //   elevation: 72,
-                  //   content: const Center(
-                  //     child: Text('Video Reported Successfully'),
-                  //   ),
-                  // );
-                  // ScaffoldMessenger.of(context).showSnackBar(snackBar);
                 },
                 child: const Text("Submit")),
             TextButton(
@@ -356,15 +399,10 @@ class _UserAndVideoDetailsState extends State<UserAndVideoDetails> {
               width: 200,
               child: Stack(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      // Get.to(() => ViewOtherProfile(userInformation: userInformation));
-                    },
-                    child: CircleAvatar(
-                      radius: 25,
-                      backgroundImage: NetworkImage(profilePhoto),
-                      backgroundColor: green,
-                    ),
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundImage: NetworkImage(profilePhoto),
+                    backgroundColor: green,
                   ),
                   Positioned(
                       left: 35,
@@ -387,8 +425,13 @@ class _UserAndVideoDetailsState extends State<UserAndVideoDetails> {
                       left: 75,
                       top: 5,
                       child: GestureDetector(
-                        onTap: () {
-                          // Get.to(() => ViewOtherProfile(userInformation: userInformation));
+                        onTap: () async {
+                          Get.to(() => widget.video['email'] !=
+                                  FirebaseAuth.instance.currentUser!.email
+                              ? ViewOtherProfile(
+                                  userId: widget.video['userInformation']
+                                      ['_id'])
+                              : const OwnProfileScreen());
                         },
                         child: Text(
                           username,
@@ -491,6 +534,7 @@ class _InteractOptionsState extends State<InteractOptions> {
   void openMessenger() {}
 
   void openWhatsApp() {}
+  CommentController commentController = Get.put(CommentController());
 
   @override
   Widget build(BuildContext context) {
@@ -498,10 +542,31 @@ class _InteractOptionsState extends State<InteractOptions> {
       right: 10,
       top: widget.size.height / 3,
       child: SizedBox(
-        height: 370,
+        height: 400,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Obx(
+              () => Column(
+                children: [
+                  const Icon(
+                    Icons.visibility,
+                    color: Colors.white,
+                    size: 35,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      videoScreenController.viewsCount.value.toString(),
+                      style: const TextStyle(
+                          color: white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Obx(
               () => Column(
                 children: [
@@ -562,7 +627,9 @@ class _InteractOptionsState extends State<InteractOptions> {
                     showModalBottomSheet(
                         context: context,
                         builder: (context) {
-                          return Comment(videoId: widget.video["_id"]);
+                          return Comment(
+                            videoId: widget.video['_id'],
+                          );
                         });
                   },
                   icon: const Icon(

@@ -6,8 +6,6 @@ import 'package:pro_shorts/constants.dart';
 import 'package:pro_shorts/views/profile/edit_profile.dart';
 import 'package:pro_shorts/views/profile/followers_following.dart';
 import 'package:pro_shorts/views/settings/settings.dart';
-
-import '../../controllers/profile.dart';
 import '../../controllers/users.dart';
 import '../../controllers/video.dart';
 import '../../get/profile/get_followers_following.dart';
@@ -25,17 +23,18 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
 
   dynamic myProfile = [];
   late List myVideos;
-  int totalViews = 0;
 
-  void countViews() async {
+  Future countViews() async {
     String email = FirebaseAuth.instance.currentUser!.email.toString();
     myVideos = await VideoMethods()
         .fetchVideosByTwoField("email", email, "videoMode", "public");
+    int totalViews = 0;
     for (Map video in myVideos) {
       // print("total views : ${video['viewsCount'].runtimeType}");
       totalViews = totalViews + int.parse(video['viewsCount'].toString());
     }
-    print("total views : $totalViews");
+    ownProfileController.totalViews.value = totalViews;
+    print("total views own profile: $totalViews");
   }
 
   OwnProfileController ownProfileController = Get.put(OwnProfileController());
@@ -51,7 +50,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
   late String portfolioURL;
   int countSocialMedia = 0;
   Future fetchMyProfile() async {
-    countViews();
+    await countViews();
     myProfile = await UserMethods().fetchUsersByField(
         "email", FirebaseAuth.instance.currentUser!.email.toString());
     myProfile = myProfile[0];
@@ -86,6 +85,20 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
       Get.put(FollowersFollowingController());
 
   @override
+  void initState() {
+    ownProfileController.reset();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  List notifications = [];
+
+  Future fetchNotifications() async {
+    notifications = await UserMethods()
+        .fetchSpecificUserField("_id", MYPROFILE['_id'], "notifications");
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         key: _scaffoldKey,
@@ -111,22 +124,43 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
             )
           ],
         ),
-        drawer: const Drawer(
-          child: Column(
-            children: [
-              DrawerHeader(child: Text("Recent Notifications")),
-              ListTile(
-                title: Text("Notifications 1"),
-              ),
-              ListTile(
-                title: Text("Notifications 2"),
-              ),
-              ListTile(
-                title: Text("Notifications 3"),
-              ),
-            ],
-          ),
-        ),
+        drawer: FutureBuilder(
+            future:
+                fetchNotifications(), // The Future<T> that you want to monitor
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                // Display a loading indicator while waiting for the Future to complete
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                // Display an error message if the Future throws an error
+                return Text('Error: ${snapshot.error}');
+              } else {
+                return Drawer(
+                    child: Column(
+                  children: [
+                    const DrawerHeader(
+                        child: Column(
+                      children: [
+                        Text("Recent Notifications"),
+                      ],
+                    )),
+                    notifications.isNotEmpty
+                        ? Expanded(
+                            child: ListView.builder(
+                                itemCount: notifications.length,
+                                itemBuilder: ((context, index) {
+                                  return ListTile(
+                                      title: Text(
+                                          notifications[index]['message']));
+                                })),
+                          )
+                        : const Expanded(
+                            child:
+                                Center(child: Text("No any new notifications")))
+                  ],
+                ));
+              }
+            }),
         body: FutureBuilder(
             future: fetchMyProfile(), // The Future<T> that you want to monitor
             builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -180,10 +214,16 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         GestureDetector(
-                          onTap: () {
+                          onTap: () async {
                             followersFollowingController
                                 .toogleFollowersFollowing(true);
-                            Get.to(() => FollowersFollowing());
+                            dynamic response = await UserMethods()
+                                .fetchSpecificUserField("_id", MYPROFILE['_id'],
+                                    "profileInformation");
+                            response = response != null ? true : false;
+                            Get.to(() => FollowersFollowing(
+                                  isProfileSetup: response,
+                                ));
                           },
                           child: Column(
                             children: [
@@ -203,10 +243,17 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
+                          onTap: () async {
                             followersFollowingController
                                 .toogleFollowersFollowing(false);
-                            Get.to(() => FollowersFollowing());
+                            dynamic response = await UserMethods()
+                                .fetchSpecificUserField("_id", MYPROFILE['_id'],
+                                    "profileInformation");
+                            response = response != null ? true : false;
+
+                            Get.to(() => FollowersFollowing(
+                                  isProfileSetup: response,
+                                ));
                           },
                           child: Column(
                             children: [
@@ -224,10 +271,12 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                         ),
                         Column(
                           children: [
-                            Text(
-                              "$totalViews",
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            Obx(
+                              () => Text(
+                                "${ownProfileController.totalViews.value}",
+                                style: const TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
                             ),
                             const Text(
                               "Total Views",
@@ -286,35 +335,48 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                             onPressed: () {
                               ownProfileController.changeVideoScreen(0);
                             },
-                            icon: const Icon(Icons.public, color: red)),
+                            icon: Obx(() => Icon(Icons.public,
+                                color: ownProfileController
+                                            .visibilityIndex.value ==
+                                        0
+                                    ? Colors.red
+                                    : Colors.black))),
                         IconButton(
                             tooltip: "Private Videos",
                             onPressed: () {
                               ownProfileController.changeVideoScreen(1);
                             },
-                            icon: const Icon(
-                              Icons.lock,
-                            )),
-                        IconButton(
-                            tooltip: "Draft Videos",
-                            onPressed: () {
-                              ownProfileController.changeVideoScreen(2);
-                            },
-                            icon: const Icon(
-                              Icons.drafts,
-                            )),
+                            icon: Obx(() => Icon(
+                                  Icons.lock,
+                                  color: ownProfileController
+                                              .visibilityIndex.value ==
+                                          1
+                                      ? Colors.red
+                                      : Colors.black,
+                                ))),
                         IconButton(
                             tooltip: "Watch Later",
                             onPressed: () {
-                              ownProfileController.changeVideoScreen(3);
+                              ownProfileController.changeVideoScreen(2);
                             },
-                            icon: const Icon(
-                              Icons.watch_later,
-                            )),
+                            icon: Obx(() => Icon(
+                                  Icons.watch_later,
+                                  color: ownProfileController
+                                              .visibilityIndex.value ==
+                                          2
+                                      ? Colors.red
+                                      : Colors.black,
+                                ))),
                       ],
                     ),
-                    Obx(() => videoVisibility[
-                        ownProfileController.visibilityIndex.value])
+                    // here due to same index value even if i click button twice so it is not rebuilding widget again so use this
+                    Obx(() => KeyedSubtree(
+                        key: UniqueKey(),
+                        child: ownProfileController.isButtonClicked.value
+                            ? videoVisibility[
+                                ownProfileController.visibilityIndex.value]
+                            : videoVisibility[
+                                ownProfileController.visibilityIndex.value]))
                   ],
                 );
               }

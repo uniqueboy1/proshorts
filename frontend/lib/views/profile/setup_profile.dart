@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/profile/setup_profile_options.dart';
 import 'package:pro_shorts/views/settings/settings.dart';
@@ -12,16 +13,11 @@ class SetupProfile extends StatefulWidget {
 }
 
 class _SetupProfileState extends State<SetupProfile> {
-  void showSnackBar() {
-    Get.snackbar("Video", "Please setup profile to upload video",
-        duration: Duration(seconds: 4));
-  }
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showSnackBar();
+      showSnackBar("Video", "Please setup profile to upload video");
     });
   }
 

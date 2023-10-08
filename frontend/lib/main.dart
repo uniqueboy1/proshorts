@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
+import 'package:path/path.dart';
 import 'package:pro_shorts/constants.dart';
 import 'package:pro_shorts/node.dart';
 import 'package:pro_shorts/test.dart';
@@ -46,13 +47,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(GetMaterialApp(
+    initialRoute: "/",
+    routes: {
+      "/": (context) => const SplashScreen(),
+      "/search": (context) => const Search(),
+      "/home_screen": (context) => const HomeScreen(),
+      "/own_profile_screen": (context) => const OwnProfileScreen()
+    },
     debugShowCheckedModeBanner: false,
-    // home: OTPPage(
-    //   isMailSend: true,
-    //   email: "",
-    //   otp: "",
-    //   password: "",
-    //   )
-    home: Scaffold(body: SplashScreen()),
   ));
 }

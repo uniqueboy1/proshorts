@@ -4,10 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/home_screen/selected_video.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../get/profile/get_profile_fetch.dart';
 
 class AddVideo extends StatefulWidget {
   AddVideo({Key? key}) : super(key: key);
@@ -26,7 +25,7 @@ class _AddVideoState extends State<AddVideo> {
       // it gives size of video in bytes
       dynamic videoSize = await videoPath.length();
       videoSize = videoSize / (1024 * 1024);
-
+      print("before video size : $videoSize");
       VideoPlayerController controller = VideoPlayerController.file(videoPath);
       await controller.initialize();
 
@@ -34,23 +33,23 @@ class _AddVideoState extends State<AddVideo> {
       Duration videoLength = controller.value.duration;
       double videoDurationInSeconds = videoLength.inMilliseconds / 1000;
       print("video duration: $videoDurationInSeconds");
-      if (videoSize <= 6 && videoDurationInSeconds <= 60) {
+      if (videoSize <= 5 && videoDurationInSeconds <= 60) {
         Get.to(() => SelectedVideo(
-            videoPath: videoPath,
-            videoLength: videoDurationInSeconds,
-            videoSize: videoSize));
+              videoPath: videoPath,
+              videoLength: videoDurationInSeconds,
+            ));
       } else if (videoSize > 5) {
-        Get.snackbar(
+        showSnackBar(
             "Size of video exceed", "You can upload video of max size 5 MB");
       } else if (videoDurationInSeconds > 60) {
-        Get.snackbar("Duration of video exceed",
+        showSnackBar("Duration of video exceed",
             "You can upload video of max duration 60 seconds");
       } else {
-        Get.snackbar("Duration and Size of video exceed",
+        showSnackBar("Duration and Size of video exceed",
             "You can upload video of max duration 60 seconds and size of 5 MB");
       }
     } else {
-      Get.snackbar("Video is not selected", "Please select a video");
+      showSnackBar("Video is not selected", "Please select a video");
     }
   }
 
@@ -60,9 +59,18 @@ class _AddVideoState extends State<AddVideo> {
         source: ImageSource.camera, maxDuration: const Duration(minutes: 1));
     if (selectedVideo != null) {
       File videoPath = File(selectedVideo.path);
-      // Get.to(SelectedVideo(videoPath: videoPath));
+      VideoPlayerController controller = VideoPlayerController.file(videoPath);
+      await controller.initialize();
+      // gives duration of video in seconds
+      Duration videoLength = controller.value.duration;
+      double videoDurationInSeconds = videoLength.inMilliseconds / 1000;
+      print("video duration: $videoDurationInSeconds");
+      Get.to(() => SelectedVideo(
+            videoPath: videoPath,
+            videoLength: videoDurationInSeconds,
+          ));
     } else {
-      Get.snackbar("Video is not recored", "Please record a video");
+      showSnackBar("Video is not recored", "Please record a video");
     }
   }
 

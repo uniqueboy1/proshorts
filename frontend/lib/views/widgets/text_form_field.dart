@@ -34,7 +34,7 @@ class _InputTextFormFieldState extends State<InputTextFormField> {
   bool isPasswordStrong() {
     String password = widget.controller.text;
 
-    if (password.length > 10) {
+    if (password.length >= 10) {
       RegExp number = RegExp(r'[0-9]');
       int countNumber = number.allMatches(password).length;
 
@@ -91,6 +91,9 @@ class _InputTextFormFieldState extends State<InputTextFormField> {
             borderSide: BorderSide(color: Colors.blue)),
         labelText: widget.labelText,
         prefixIcon: Icon(widget.icon),
+        helperText: widget.labelText == "Password"
+            ? "Length >= 10, Capital >= 3, Special Symbol >= 3, Small Letter >= 2 and Numbers >= 2"
+            : "",
         prefixIconColor: red,
         suffixIcon: IconButton(
             onPressed: () {
@@ -101,13 +104,6 @@ class _InputTextFormFieldState extends State<InputTextFormField> {
             },
             icon: Icon(widget.suffixIcon)),
       ),
-      // onFieldSubmitted: (value) {
-      //   print("vlaue : $value");
-      //   isEmailExist(value).then((message) {
-      //     emailExistMessage = message;
-      //     setState(() {});
-      //   });
-      // },
       validator: (value) {
         if (value!.isEmpty) {
           return widget.emptyMessage;
@@ -123,18 +119,6 @@ class _InputTextFormFieldState extends State<InputTextFormField> {
             return "Invallid E-mail";
           }
         }
-
-        // isEmailExist(value).then((methods) {
-        //   if (methods.isEmpty) {
-        //     return "E-mail already exists";
-        //   }
-        //   return null;
-        // });
-
-        // if (emailExistMessage.isNotEmpty) {
-        //   print("emailExistMessage : $emailExistMessage");
-        //   return emailExistMessage;
-        // }
 
         return null;
       },

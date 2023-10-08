@@ -6,13 +6,15 @@ class VideoDetailsInput extends StatelessWidget {
   final String labelText;
   final IconData prefixIcon;
   final String? emptyMessage;
-  VideoDetailsInput({
-    Key? key,
-    required this.controller,
-    required this.labelText,
-    required this.prefixIcon,
-    this.emptyMessage,
-  }) : super(key: key);
+  final int? maxLength;
+  VideoDetailsInput(
+      {Key? key,
+      required this.controller,
+      required this.labelText,
+      required this.prefixIcon,
+      this.emptyMessage,
+      this.maxLength})
+      : super(key: key);
 
   bool isPasswordStrong() {
     return false;
@@ -21,6 +23,7 @@ class VideoDetailsInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      maxLength: maxLength,
       controller: controller,
       onChanged: (value) {},
       decoration: InputDecoration(

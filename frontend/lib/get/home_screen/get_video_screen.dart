@@ -19,20 +19,17 @@ enum ReportReason {
 }
 
 class VideoScreenController extends GetxController {
-  @override
-  void onInit() {
-    // TODO: implement onInit
-    super.onInit();
-  }
-
   VideoMethods videoMethods = VideoMethods();
   RxInt shareCount = 0.obs;
+  RxInt commentsCount = 0.obs;
+  RxInt viewsCount = 0.obs;
   Map<String, dynamic> currentVideo = {};
   void initializeVideoDetails(Map<String, dynamic> video) {
+    viewsCount.value = currentVideo['viewsCount'];
     commentsCount.value = currentVideo['comments'].length;
     likeCount.value = currentVideo['likeCount'];
     dislikeCount.value = currentVideo['dislikeCount'];
-    shareCount.value = video['shareCount'];
+    shareCount.value = currentVideo['shareCount'];
     videoDescription.value = video['description'].length >= 25
         ? "${video["description"].substring(0, 25)} ..."
         : video['description'];
@@ -40,6 +37,10 @@ class VideoScreenController extends GetxController {
     isVideoPlaying.value = true;
     seeMore.value = "SEE MORE";
     isUserAlreadyLikedDislikedVideo();
+    changeFollowIcon();
+  }
+
+  void changeFollowIcon() {
     if (isFollowingUser) {
       followIcon.value = Icons.check;
     } else {
@@ -47,9 +48,16 @@ class VideoScreenController extends GetxController {
     }
   }
 
+  Future updateComments(String videoId) async {
+    List comments = await VideoMethods()
+        .fetchSpecificVideosField("_id", videoId, "comments");
+    commentsCount.value = comments.length;
+  }
+
   Future fetchCurrentVideo(String videoId) async {
     List videos = await VideoMethods().fetchVideosByField("_id", videoId);
     currentVideo = videos[0];
+    return currentVideo;
   }
 
   Future initializeVideo(Map<String, dynamic> video) async {
@@ -62,23 +70,36 @@ class VideoScreenController extends GetxController {
       ..initialize();
   }
 
+// to update video details when details is updated from other screen
+  Future updateVideoDetails(String videoId, String userId) async {
+    Map<String, dynamic> currentVideo = await fetchCurrentVideo(videoId);
+    await fetchLikedDislikedVideos();
+    await isFollowing(userId);
+    initializeVideoDetails(currentVideo);
+  }
+
   /* start : working on following */
   Rx<IconData> followIcon = Icons.add.obs;
 
   void updateFollowIcon(String userId) async {
-    if (!isFollowingUser) {
-      followIcon.value = Icons.check;
-      await followUser(userId);
-    } else {
-      followIcon.value = Icons.add;
-      await followUser(userId);
+    await isFollowing(userId);
+    // user can't follow own profile
+    if (userId != MYPROFILE['_id']) {
+      if (!isFollowingUser) {
+        followIcon.value = Icons.check;
+        await followUser(userId);
+      } else {
+        followIcon.value = Icons.add;
+        await followUser(userId);
+      }
     }
   }
 
   late bool isFollowingUser;
   Future isFollowing(String userId) async {
-    isFollowingUser = await UserMethods().checkValueExistInArray(
+    Map<String, dynamic> user = await UserMethods().checkValueExistInArray(
         MYPROFILE['_id'], "following", "userInformation", userId);
+    isFollowingUser = user['following'].isNotEmpty;
   }
 
   Future followUser(String userId) async {
@@ -86,16 +107,41 @@ class VideoScreenController extends GetxController {
     Map<String, dynamic> followersInformation = {
       "userInformation": MYPROFILE['_id']
     };
+    UserMethods userMethods = UserMethods();
     if (!isFollowingUser) {
-      await UserMethods().editUserArrayField(
+      await userMethods.editUserArrayField(
           MYPROFILE['_id'], followingInformation, "following");
-      await UserMethods()
-          .editUserArrayField(userId, followersInformation, "followers");
+      await userMethods.editUserArrayField(
+          userId, followersInformation, "followers");
+
+      dynamic response = await userMethods.fetchSpecificUserField(
+          "_id", MYPROFILE['_id'], "profileInformation");
+
+      await userMethods.editUserArrayField(
+          userId,
+          {
+            "message": response != null
+                ? "${response['username']} started following you"
+                : "Someone started following you"
+          },
+          "notifications");
     } else {
-      await UserMethods().deleteUserArrayField(
+      await userMethods.deleteUserArrayField(
           MYPROFILE['_id'], followingInformation, "following");
-      await UserMethods()
-          .deleteUserArrayField(userId, followersInformation, "followers");
+      await userMethods.deleteUserArrayField(
+          userId, followersInformation, "followers");
+
+      dynamic response = await userMethods.fetchSpecificUserField(
+          "_id", MYPROFILE['_id'], "profileInformation");
+
+      await userMethods.deleteUserArrayField(
+          userId,
+          {
+            "message": response != null
+                ? "${response['username']} started following you"
+                : "Someone started following you"
+          },
+          "notifications");
     }
   }
 
@@ -118,6 +164,9 @@ class VideoScreenController extends GetxController {
       "videoInformation": videoId,
     };
 
+    int latestLikeCount = await VideoMethods()
+        .fetchSpecificVideosField("_id", videoId, "likeCount");
+
     isLikeClicked = !isLikeClicked;
     if (isLikeClicked) {
       if (isDislikeClicked) {
@@ -126,7 +175,8 @@ class VideoScreenController extends GetxController {
         dislikeButtonColor = Colors.white;
       }
       likeButtonColor = Colors.blue;
-      likeCount.value++;
+      latestLikeCount++;
+      likeCount.value = latestLikeCount;
       await UserMethods()
           .editUserArrayField(MYPROFILE['_id'], likedVideo, "likedVideos");
       await UserMethods()
@@ -146,6 +196,8 @@ class VideoScreenController extends GetxController {
     Map<String, dynamic> dislikedVideo = {
       "videoInformation": videoId,
     };
+    int latestDislikeCount = await VideoMethods()
+        .fetchSpecificVideosField("_id", videoId, "dislikeCount");
     isDislikeClicked = !isDislikeClicked;
     if (isDislikeClicked) {
       if (isLikeClicked) {
@@ -154,7 +206,8 @@ class VideoScreenController extends GetxController {
         likeButtonColor = Colors.white;
       }
       dislikeButtonColor = Colors.red;
-      dislikeCount.value++;
+      latestDislikeCount++;
+      dislikeCount.value = latestDislikeCount;
       await UserMethods().editUserArrayField(
           MYPROFILE['_id'], dislikedVideo, "dislikedVideos");
       await UserMethods()
@@ -263,102 +316,6 @@ class VideoScreenController extends GetxController {
 
   /*   end : working on see more button  */
 
-  /* start : working on comments */
-
-  RxInt commentsCount = 0.obs;
-  bool isCommentLikeClicked = false;
-  Color commentLikeButtonColor = Colors.white;
-  bool isCommentDislikeClicked = false;
-  Color commentDislikeButtonColor = Colors.white;
-  dynamic fetchComments = Future.value().obs;
-  RxList allComments = [].obs;
-  dynamic fetchReply_ = Future.value().obs;
-  RxString viewRepliesText = "".obs;
-
-  void initializeComments(String videoId) {
-    fetchComments = fetchAllComments(videoId);
-  }
-
-  bool isUserAlreadyCommentedVideo = false;
-  void userAlreadyCommented() {
-    isUserAlreadyCommentedVideo = allComments.any((comment) {
-      String userId = comment['userInformation']['_id'];
-      if (userId == MYPROFILE['_id']) {
-        return true;
-      }
-      return false;
-    });
-  }
-
-  Future updateComments(String videoId, String data) async {
-    if (!isUserAlreadyCommentedVideo) {
-      Map<String, dynamic> comment = {
-        "comment": data,
-        "userInformation": MYPROFILE['_id']
-      };
-      await VideoMethods().editVideoArrayField(videoId, comment, "comments");
-      Get.snackbar("Comment", "Comment added successfully");
-    } else {
-      Get.snackbar("Comment", "You can add one comment per video");
-    }
-  }
-
-  Future fetchAllComments(String videoId) async {
-    allComments.value = await VideoMethods()
-        .fetchSpecificVideosField("_id", videoId, "comments");
-    print("all comments : $allComments");
-    userAlreadyCommented();
-  }
-
-  Future deleteComment(String videoId) async {
-    Map<String, dynamic> comment = {"userInformation": MYPROFILE['_id']};
-    await VideoMethods().deleteVideoArrayField(videoId, comment, "comments");
-    Get.snackbar("Comment", "Comment deleted successfully");
-  }
-
-  void changeCommentLike(String id) {
-    isCommentLikeClicked = !isCommentLikeClicked;
-    if (isCommentLikeClicked) {
-      if (isCommentLikeClicked) {
-        isCommentLikeClicked = false;
-        dislikeCount.value--;
-        commentDislikeButtonColor = Colors.white;
-      }
-      likeButtonColor = Colors.blue;
-      likeCount.value++;
-    } else {
-      isDislikeClicked = false;
-      likeButtonColor = Colors.white;
-      likeCount.value--;
-    }
-    videoMethods.editVideo(
-        id, {"likeCount": likeCount.value, "dislikeCount": dislikeCount.value});
-  }
-
-  void changeCommentDislike(String id) {
-    isDislikeClicked = !isDislikeClicked;
-    if (isDislikeClicked) {
-      if (isLikeClicked) {
-        isLikeClicked = false;
-        likeCount.value--;
-        likeButtonColor = Colors.white;
-      }
-      dislikeButtonColor = Colors.red;
-      dislikeCount.value++;
-    } else {
-      isLikeClicked = false;
-      dislikeButtonColor = Colors.white;
-      dislikeCount.value--;
-    }
-    videoMethods.editVideo(
-        id, {"dislikeCount": dislikeCount.value, "likeCount": likeCount.value});
-  }
-
-  void increaseComments(int commentCount) {
-    commentsCount.value = commentCount;
-  }
-  /* end : working on comments */
-
   /* start : working on report video */
 
   Rx<ReportReason> selectedReportReason = ReportReason.notProgramming.obs;
@@ -366,56 +323,4 @@ class VideoScreenController extends GetxController {
     selectedReportReason.value = reason;
   }
   /* end : working on report video */
-
-  /* start : working on follow and unfollow */
-
-  /* end : working on follow and unfollow */
-
-  // @override
-  // void onInit() {
-  //   commentsCount.value = currentVideo['comments'].length;
-  //   likeCount.value = currentVideo['likeCount'];
-  //   dislikeCount.value = currentVideo['dislikeCount'];
-  //   print("comments : ${currentVideo['comments'].length}");
-  //   shareCount.value = currentVideo['shareCount'];
-  //   videoDescription.value = currentVideo['description'].length >= 25
-  //       ? "${currentVideo["description"].substring(0, 25)} ..."
-  //       : currentVideo['description'];
-  //   controller =
-  //       VideoPlayerController.network("$getVideo/${currentVideo['videoPath']}")
-  //         ..initialize();
-
-  //   super.onInit();
-  // }
-
-  // @override
-  // void onInit() {
-  //   videos1 = ALLVIDEOS;
-  //   id = videos1['_id'];
-  //   print("id : $id");
-  //   videoDescription.value = videos1["description"].substring(0, 24);
-  //   videoPath = videos1['videoPath'];
-  //   likeCount.value = videos1['likeCount'];
-  //   dislikeCount.value = videos1['dislikeCount'];
-  //   commentsCount.value = videos1['comments'].length;
-  //   shareCount.value = videos1['shareCount'];
-  //   controller = VideoPlayerController.network("$getVideo/$videoPath")
-  //     ..initialize();
-  //   // controller = VideoPlayerController.network("$getVideo/$videoPath")
-  //   //   ..initialize().then((_) {
-  //   //     // Use the ever method to observe changes in the controller value
-  //   //     ever(controller.obs, (_) {
-  //   //       // This callback will be triggered whenever the controller value changes
-  //   //       // Update any UI components here
-  //   //       update(); // Notify GetX to update the UI
-  //   //     });
-  //   //   });
-  //   print("video path: $getVideo/$videoPath");
-  //   // controller = VideoPlayerController.asset(localVideoPath)..initialize();
-
-  //   super.onInit();
-  // }
-
-  // final controller = VideoPlayerController.asset("assets/videos/video.mp4")
-  //   ..initialize();
 }

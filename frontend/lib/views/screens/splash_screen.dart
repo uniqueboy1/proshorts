@@ -19,14 +19,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     // fetching profile details
-    if(FirebaseAuth.instance.currentUser != null){
-      Get.put(FetchProfileController()).fetchOwnProfile();
+    if (FirebaseAuth.instance.currentUser != null) {
+      Get.put(FetchProfileController()).fetchMyProfile();
     }
-    // fetching all videos
-    Get.put(AllVideosController()).fetchAllVideos();
-    Timer(const Duration(seconds: 1), () {
+    Timer(const Duration(seconds: 2), () {
       Get.off(() => FirebaseAuth.instance.currentUser != null
-          ? HomeScreen()
+          ? const HomeScreen()
           : LoginScreen());
     });
     super.initState();

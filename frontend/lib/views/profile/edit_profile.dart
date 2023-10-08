@@ -25,7 +25,6 @@ class EditProfileOptions extends StatefulWidget {
 }
 
 class _EditProfileOptionsState extends State<EditProfileOptions> {
-  Map<String, dynamic> myProfile = MYPROFILE;
   late TextEditingController nameController;
   late TextEditingController userNameController;
   late TextEditingController bioController;
@@ -33,26 +32,31 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
   late TextEditingController instagramURLController;
   late TextEditingController twitterURLController;
   late TextEditingController portfolioURLController;
+  late String tempUsername;
   final _formKey = GlobalKey<FormState>();
   String profilePhoto = "";
   @override
   void initState() {
+    // initially username is valid
+    setupProfileController.displayError(true);
+
     nameController =
-        TextEditingController(text: myProfile['profileInformation']['name']);
+        TextEditingController(text: MYPROFILE['profileInformation']['name']);
     userNameController = TextEditingController(
-        text: myProfile['profileInformation']['username']);
+        text: MYPROFILE['profileInformation']['username']);
+    tempUsername = userNameController.text;
     bioController =
-        TextEditingController(text: myProfile['profileInformation']['bio']);
+        TextEditingController(text: MYPROFILE['profileInformation']['bio']);
     youtubeURLController = TextEditingController(
-        text: myProfile['profileInformation']['youtubeURL']);
+        text: MYPROFILE['profileInformation']['youtubeURL']);
     instagramURLController = TextEditingController(
-        text: myProfile['profileInformation']['instagramURL']);
+        text: MYPROFILE['profileInformation']['instagramURL']);
     twitterURLController = TextEditingController(
-        text: myProfile['profileInformation']['twitterURL']);
+        text: MYPROFILE['profileInformation']['twitterURL']);
     portfolioURLController = TextEditingController(
-        text: myProfile['profileInformation']['portfolioURL']);
+        text: MYPROFILE['profileInformation']['portfolioURL']);
     profilePhoto =
-        "$getProfilePhoto/${myProfile['profileInformation']['profilePhoto']}";
+        "$getProfilePhoto/${MYPROFILE['profileInformation']['profilePhoto']}";
     setupProfileController.displayImage(profilePhoto);
     // TODO: implement initState
     super.initState();
@@ -63,16 +67,16 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
   SetupProfileController setupProfileController =
       Get.put(SetupProfileController());
 
-  void editProfile() async {
+  Future editProfile() async {
     if (selectedImage != null) {
       profilePhoto = basename(setupProfileController.image.value);
       profilePhoto = "${const Uuid().v1()}$profilePhoto";
       setupProfile
-          .deleteProfilePhoto(myProfile['profileInformation']['profilePhoto']);
+          .deleteProfilePhoto(MYPROFILE['profileInformation']['profilePhoto']);
       setupProfile.uploadProfilePhoto(
           setupProfileController.image.value, profilePhoto);
     } else {
-      profilePhoto = myProfile['profileInformation']['profilePhoto'];
+      profilePhoto = MYPROFILE['profileInformation']['profilePhoto'];
     }
     Map<String, dynamic> profile = {
       "profilePhoto": profilePhoto,
@@ -85,10 +89,39 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
       "portfolioURL": portfolioURLController.text.trim(),
       "email": FirebaseAuth.instance.currentUser!.email
     };
-    setupProfile.editProfile(myProfile['profileInformation']['_id'], profile);
+    await setupProfile.editProfile(
+        MYPROFILE['profileInformation']['_id'], profile);
+    Get.snackbar("Profile", "Profile updated successfully");
+    Get.off(() => const OwnProfileScreen());
   }
 
   XFile? selectedImage;
+
+  Future<bool> checkUserNameExist() async {
+    List profiles = await SetupProfile()
+        .fetchProfilesByField("username", userNameController.text.trim());
+    if (profiles.isNotEmpty) {
+      return true;
+    }
+    return false;
+  }
+
+  bool isUserNameValid(String username) {
+    // rules
+    // 1. username can have alphabets and numbers
+    // 2. username can have _ , - and . as special characters
+    // 3. minimum length must be 5 and maximum length must be 15
+
+    RegExp forbiddenCharacters = RegExp(r'[^a-zA-Z0-9-._]');
+
+    if (username.length < 5 || username.length > 15) {
+      return false;
+    }
+    if (forbiddenCharacters.hasMatch(username)) {
+      return false;
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,13 +183,59 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
                   const SizedBox(
                     height: 10,
                   ),
-                  ProfileInput(
-                    controller: userNameController,
-                    labelText: "Enter username",
-                    prefixIcon: Icons.star,
-                    emptyMessage: "Please enter the username",
-                    suffixIcon: Icons.person_2,
+                  Obx(
+                    () => TextFormField(
+                      controller: userNameController,
+                      decoration: InputDecoration(
+                        focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue)),
+                        labelText: "Enter username",
+                        prefixIcon: const Icon(Icons.star),
+                        prefixIconColor: Colors.red,
+                        helperText:
+                            "Username length {5 - 15} and can have alphabets, numbers, underscore(_), dot(.) and hyphen(-)",
+                        suffixIcon: setupProfileController.isUsernameValid.value
+                            ? const Icon(FontAwesomeIcons.solidCircleCheck)
+                            : const Icon(Icons.error),
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please enter a username";
+                        }
+                        if (!isUserNameValid(value)) {
+                          return "Invalid username";
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        bool isValid = isUserNameValid(value);
+                        setupProfileController.displayError(isValid);
+                      },
+                    ),
                   ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TextButton(
+                      onPressed: () async {
+                        if (userNameController.text.trim().isNotEmpty &&
+                            isUserNameValid(userNameController.text.trim())) {
+                          if (tempUsername != userNameController.text.trim()) {
+                            bool isUsernameExist = await checkUserNameExist();
+                            if (isUsernameExist) {
+                              Get.snackbar("Username",
+                                  "${userNameController.text.trim()} is not available");
+                            } else {
+                              Get.snackbar("Username",
+                                  "${userNameController.text.trim()} is available");
+                            }
+                          } else {
+                            Get.snackbar("Username",
+                                "${userNameController.text.trim()} is available");
+                          }
+                        }
+                      },
+                      child: const Text("Check username is available")),
                   const SizedBox(
                     height: 10,
                   ),
@@ -169,7 +248,7 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
                   const SizedBox(
                     height: 15,
                   ),
-                  Row(children: const [
+                  const Row(children: [
                     Text(
                       "Add social media link",
                     )
@@ -216,9 +295,19 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
                     height: 10,
                   ),
                   ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          editProfile();
+                          if (tempUsername != userNameController.text.trim()) {
+                            bool isUserNameExist = await checkUserNameExist();
+                            if (!isUserNameExist) {
+                              await editProfile();
+                            } else {
+                              Get.snackbar(
+                                  "Username", "Username already exists");
+                            }
+                          } else {
+                            await editProfile();
+                          }
                         }
                       },
                       child: const Text("Update Profile"))

@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/constants.dart';
+import 'package:pro_shorts/get/profile/get_followers_following.dart';
+import 'package:pro_shorts/views/profile/followers_following.dart';
 import 'package:pro_shorts/views/profile/setup_profile_options.dart';
 import 'package:pro_shorts/views/settings/settings.dart';
 
@@ -26,6 +28,9 @@ class _NoProfileScreenState extends State<NoProfileScreen> {
     following = myProfile['following'];
     watchLaterVideos = myProfile['watchLater'];
   }
+
+  FollowersFollowingController followersFollowingController =
+      Get.put(FollowersFollowingController());
 
   @override
   Widget build(BuildContext context) {
@@ -65,21 +70,34 @@ class _NoProfileScreenState extends State<NoProfileScreen> {
                     const SizedBox(
                       height: 20,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Following"),
-                        const SizedBox(
-                          width: 20,
-                        ),
-                        Text("${following.length}")
-                      ],
+                    GestureDetector(
+                      onTap: () async {
+                        followersFollowingController
+                            .toogleFollowersFollowing(false);
+                        dynamic response = await UserMethods()
+                            .fetchSpecificUserField(
+                                "_id", MYPROFILE['_id'], "profileInformation");
+                        response = response != null ? true : false;
+                        Get.to(() => FollowersFollowing(
+                              isProfileSetup: response,
+                            ));
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Following"),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          Text("${following.length}")
+                        ],
+                      ),
                     ),
                     const SizedBox(
                       height: 20,
                     ),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         SizedBox(
                           width: 10,
                         ),
@@ -114,15 +132,16 @@ class _NoProfileScreenState extends State<NoProfileScreen> {
 class WatchLaterVideos extends StatelessWidget {
   WatchLaterVideos({Key? key, required this.myWatchLaterVideos})
       : super(key: key);
-  List myWatchLaterVideos = [];
+  List myWatchLaterVideos;
   @override
   Widget build(BuildContext context) {
+    print("my watch later videos : $myWatchLaterVideos");
     return myWatchLaterVideos.isNotEmpty
         ? Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: GridView.builder(
-                itemCount: 10,
+                itemCount: myWatchLaterVideos.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 10,
@@ -156,7 +175,7 @@ class WatchLaterVideos extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
                                   child: Text(
-                                    "${myWatchLaterVideos[index]['videoInformation']['countViews']}",
+                                    "${myWatchLaterVideos[index]['videoInformation']['viewsCount']}",
                                     style: const TextStyle(
                                         color: white, fontSize: 20),
                                   ),

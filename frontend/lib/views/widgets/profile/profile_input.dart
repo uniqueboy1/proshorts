@@ -37,8 +37,6 @@ class _ProfileInputState extends State<ProfileInput> {
     return actualResponse['response'].isNotEmpty;
   }
 
-  // bool isUsernameExist = false;
-
   // @override
   // void initState() {
   //   print("init state called");
@@ -68,21 +66,11 @@ class _ProfileInputState extends State<ProfileInput> {
           suffixIcon: Icon(widget.suffixIcon),
           suffixIconColor: widget.suffixIconColor),
       validator: (value) {
-        // bool isUsernameExist;
-        // if (widget.labelText == "Enter username" && widget.controller.text != "") {
-        //   checkUsernameExistance().then((value) {
-        //     print("value : ${value}");
-        //     isUsernameExist = value;
-        //     if (isUsernameExist) {
-        //       return "Username already exist";
-        //     }
-        //   });
-        // }
-
         if (value!.isEmpty && widget.prefixIcon == Icons.star) {
           return widget.emptyMessage;
         }
-        // return isUsernameExist ? "Username already exists" : null;
+
+        return null;
       },
     );
   }

@@ -48,22 +48,22 @@ class UsersController {
       const { id } = req.params;
       let following = [];
       let response = await users.findById(id).select("following");
-      for(let userInformation of response.following){
-        following.push(userInformation['userInformation'])
+      for (let userInformation of response.following) {
+        following.push(userInformation["userInformation"]);
       }
       response = await upload_videos
         .find({
-          videoMode : "public",
+          videoMode: "public",
           userInformation: {
             $in: following,
           },
         })
         .populate({
-          path : "userInformation",
-          populate : {
-            path : "profileInformation"
-          }
-        })
+          path: "userInformation",
+          populate: {
+            path: "profileInformation",
+          },
+        });
       console.log("response");
       res.json({
         success: true,
@@ -82,10 +82,10 @@ class UsersController {
         .findById(id)
         .populate("profileInformation")
         .populate({
-          path: "followers.userInformation",
-          populate: {
-            path: "profileInformation",
-          },
+          path: "public_videos.videoInformation",
+        })
+        .populate({
+          path: "private_videos.videoInformation",
         });
       console.log(response);
       res.json({
@@ -133,6 +133,15 @@ class UsersController {
               path: "profileInformation",
             },
           });
+      } else if (return_field == "profileInformation") {
+        response = await users
+          .find({
+            [search_field]: search_value,
+          })
+          .select(return_field)
+          .populate({
+            path: "profileInformation",
+          });
       } else if (return_field == "following") {
         response = await users
           .find({
@@ -143,6 +152,39 @@ class UsersController {
             path: "following.userInformation",
             populate: {
               path: "profileInformation",
+            },
+          });
+      } else if (return_field == "watchHistory") {
+        response = await users
+          .find({
+            [search_field]: search_value,
+          })
+          .select(return_field)
+          .populate({
+            path: "watchHistory.videoInformation",
+          });
+      } else if (return_field == "watchLater") {
+        response = await users
+          .find({
+            [search_field]: search_value,
+          })
+          .select(return_field)
+          .populate({
+            path: "watchLater.videoInformation",
+          });
+      } else if (return_field == "public_videos") {
+        response = await users
+          .find({
+            [search_field]: search_value,
+          })
+          .select(return_field)
+          .populate({
+            path: "public_videos.videoInformation",
+            populate: {
+              path: "userInformation",
+              populate: {
+                path: "profileInformation",
+              },
             },
           });
       } else {
@@ -252,7 +294,7 @@ class UsersController {
   }
 
   async checkValueExistInArray(req, res) {
-    console.log("checking value");
+    console.log("checking value user");
     try {
       const { userId, field, checkValue, key } = req.params;
       let response = await users.findOne(
@@ -267,12 +309,11 @@ class UsersController {
           },
         }
       );
-      const valueExists =
-        response && response[field] && response[field].length > 0;
+      console.log("response", response);
       res.json({
         success: true,
         message: "Checking value",
-        response: valueExists,
+        response,
       });
     } catch (error) {
       res.send({ success: false, message: error });
@@ -288,6 +329,38 @@ class UsersController {
           [field]: req.body,
         },
       });
+      res.json({
+        success: true,
+        message: `${field}'s ${req.body} Updated Successfully`,
+        response,
+      });
+    } catch (error) {
+      res.send({ success: false, message: error });
+    }
+  }
+
+  async updateArrayField(req, res) {
+    console.log("update user array field");
+    try {
+      const { userId, field1, field2, updateId } = req.params;
+      // here directly assigining req.body reset all the fields so use this technique
+      const updateObject = {};
+      for (const key in req.body) {
+        updateObject[`${field1}.$.${key}`] = req.body[key];
+      }
+
+      let response = await users.updateOne(
+        {
+          _id: userId,
+          [`${field1}.${field2}`]: updateId,
+        },
+        {
+          $set: updateObject,
+        },
+        {
+          new: true,
+        }
+      );
       res.json({
         success: true,
         message: `${field}'s ${req.body} Updated Successfully`,
@@ -319,6 +392,17 @@ class UsersController {
   async deleteUserById(req, res) {
     try {
       const { id } = req.params;
+      // deleting profile
+      let user = await users.findById(id);
+      let email = user["email"];
+      if (profile.hasOwnProperty("profileInformation")) {
+        await profile.findByIdAndDelete(profile["profileInformation"]);
+      }
+
+      // deleting all videos uploaded by user
+      await upload_videos.deleteMany({
+        email: email,
+      });
       let response = await users.findByIdAndDelete(id);
       res.json({
         success: true,
@@ -329,48 +413,6 @@ class UsersController {
       res.send({ success: false, message: error });
     }
   }
-
-  // async searching(req, res){
-  //   const {search_term} = req.query;
-  //   const pipeline = [
-  //     {
-  //       $lookup: {
-  //         from: "profiles",
-  //         localField: "profileInformation",
-  //         foreignField: "_id",
-  //         as: "profileInformation",
-  //       },
-  //     },
-  //     {
-  //       $unwind: "$profileInformation",
-  //     },
-  //     {
-  //       $match: {
-  //         $or: [
-  //           { "profileInformation.name": { $regex: search_term, $options: "i" } }, // Search by name (case-insensitive)
-  //           { "profileInformation.username": { $regex: search_term, $options: "i" } }, // Search by username (case-insensitive)
-  //           { "profileInformation.bio": { $regex: search_term, $options: "i" } }, // Search by bio (case-insensitive)
-  //         ],
-  //       },
-  //     },
-  //     {
-  //       $project: {
-  //         followers : 1,
-  //         user : "$$ROOT",
-  //         profileInformation: 1, // Exclude the profile information if not needed in the final results
-  //       },
-  //     },
-  //   ];
-
-  //   const response = await users.aggregate(pipeline);
-  //   console.log(response);
-
-  //   res.json({
-  //         success: true,
-  //         message: "User Searched Successfully",
-  //         response,
-  //       });
-  // }
 
   async searchQuery(req, res) {
     console.log("search query");

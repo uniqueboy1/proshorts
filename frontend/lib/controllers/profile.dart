@@ -114,7 +114,7 @@ class SetupProfile {
     }
   }
 
-  void deleteProfilePhoto(String profileName) async {
+  Future deleteProfilePhoto(String profileName) async {
     try {
       final String apiUrl = '$DELETE_PROFILE_PHOTO_URL/$profileName';
       final response = await http.delete(
@@ -136,7 +136,7 @@ class SetupProfile {
     }
   }
 
-  void editProfile(String id, Map<String, dynamic> data) async {
+  Future editProfile(String id, Map<String, dynamic> data) async {
     try {
       final String apiUrl = '$EDIT_PROFILE_URL/$id';
       final response = await http.put(Uri.parse(apiUrl),
@@ -149,8 +149,7 @@ class SetupProfile {
 
       if (actualResponse['success']) {
         print('Profile updated successfully');
-        FETCHPROFILECONTROLLER.fetchOwnProfile();
-        Get.to(() => const OwnProfileScreen());
+        
       } else {
         print('Error: ${actualResponse['message']}');
       }
@@ -158,4 +157,17 @@ class SetupProfile {
       print("Error while updating profile : $error");
     }
   }
+
+  Future<List> fetchProfilesByField(String field, String value) async {
+    try {
+      final URL = Uri.parse("${READ_PROFILE_BY_FIELD_URL}/$field/$value");
+      final response = await http.get(URL);
+      final actualResponse = jsonDecode(response.body);
+      return actualResponse['response'];
+    } catch (error) {
+      print("error occurred while fetching user : $error");
+      return [];
+    }
+  }
+
 }

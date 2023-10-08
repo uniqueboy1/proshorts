@@ -23,17 +23,6 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // void toastError(message) {
-    //   Fluttertoast.showToast(
-    //     msg: message,
-    //     toastLength: Toast.LENGTH_LONG,
-    //     gravity: ToastGravity.TOP,
-    //     timeInSecForIosWeb: 1,
-    //     backgroundColor: Colors.red,
-    //     textColor: Colors.white,
-    //     fontSize: 16.0,
-    //   );
-    // }
 
     return Scaffold(
         body: Center(
@@ -80,7 +69,7 @@ class SignupScreen extends StatelessWidget {
                   emptyMessage: "Please enter passoword",
                   suffixIcon: Icons.visibility_off,
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
                 SizedBox(
@@ -91,11 +80,11 @@ class SignupScreen extends StatelessWidget {
                             createAccount();
                           }
                         },
-                        child: Text("SignUp"))),
+                        child: const Text("SignUp"))),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Already have an account ? "),
+                    const Text("Already have an account ? "),
                     TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -104,7 +93,7 @@ class SignupScreen extends StatelessWidget {
                                 builder: (context) => LoginScreen(),
                               ));
                         },
-                        child: Text("Login"))
+                        child: const Text("Login"))
                   ],
                 )
               ],

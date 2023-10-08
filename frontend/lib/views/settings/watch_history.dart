@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/constants.dart';
+import 'package:pro_shorts/methods/initialize_video.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
+import 'package:pro_shorts/views/video/view_other_video.dart';
 
 import '../../controllers/users.dart';
 import '../../get/videos/get_watch_history.dart';
@@ -14,20 +17,12 @@ class WatchHistory extends StatefulWidget {
 }
 
 class _WatchHistoryState extends State<WatchHistory> {
-  bool isSelectClicked = false;
-  bool isSelectAllClicked = false;
-  String selectAll = "Select All";
-  String select = "Select";
-  IconData checkedIcon = FontAwesomeIcons.solidCircleCheck;
-  IconData noCheckedIcon = Icons.circle_outlined;
-  List selectedVideos = [];
-
   Widget showDeleteOption() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text("${selectedVideos.length} Videos Selected"),
+        Text("${watchHistoryController.selectedVideos.length} Videos Selected"),
         ElevatedButton(
             onPressed: () {
               deleteWatchHistory();
@@ -40,26 +35,23 @@ class _WatchHistoryState extends State<WatchHistory> {
   WatchHistoryController watchHistoryController =
       Get.put(WatchHistoryController());
 
-  List watchHistory = [];
-  dynamic userInformation;
   Future fetchWatchHistory() async {
-    userInformation =
-        await UserMethods().fetchUsersByField("email", LOGIN_EMAIL.toString());
-    userInformation = userInformation[0];
-    watchHistory = userInformation['watchHistory'];
-    watchHistoryController.deleteWatchHistory(watchHistory.length);
+    await watchHistoryController.fetchWatchHistory();
   }
 
   Future deleteWatchHistory() async {
-    // Filter out items based on the condition
-    watchHistory = watchHistory
-        .where(
-            (item) => !selectedVideos.contains(item["videoInformation"]["_id"]))
-        .toList();
-    await UserMethods()
-        .editUser(userInformation['_id'], {"watchHistory": watchHistory});
-    Get.snackbar("Watch History",
-        "${selectedVideos.length} videos removed from watch history");
+    await watchHistoryController.deleteWatchHistory();
+    await fetchWatchHistory();
+    showSnackBar("Watch History",
+        "${watchHistoryController.selectedVideos.length} videos removed from watch history");
+    watchHistoryController.selectedVideos.value = [];
+  }
+
+  @override
+  void initState() {
+    watchHistoryController.reset();
+    // TODO: implement initState
+    super.initState();
   }
 
   @override
@@ -71,43 +63,20 @@ class _WatchHistoryState extends State<WatchHistory> {
           actions: [
             TextButton(
                 onPressed: () {
-                  isSelectClicked = !isSelectClicked;
-                  isSelectAllClicked = false;
-                  selectedVideos = [];
-                  if (isSelectClicked) {
-                    select = "Cancel";
-                  } else {
-                    select = "Select";
-                  }
-                  selectAll = "Select All";
-                  setState(() {});
+                  watchHistoryController.changeSelect();
                 },
-                child: Text(
-                  select,
-                  style: const TextStyle(color: Colors.white),
-                )),
+                child: Obx(() => Text(
+                      watchHistoryController.select.value,
+                      style: const TextStyle(color: Colors.white),
+                    ))),
             TextButton(
                 onPressed: () {
-                  isSelectAllClicked = !isSelectAllClicked;
-                  isSelectClicked = false;
-                  selectedVideos = [];
-                  if (isSelectAllClicked) {
-                    for (var i = 0; i < watchHistory.length; i++) {
-                      selectedVideos
-                          .add(watchHistory[i]['videoInformation']['_id']);
-                    }
-                    selectAll = "Deselect All";
-                  } else {
-                    selectAll = "Select All";
-                  }
-
-                  select = "Select";
-                  setState(() {});
+                  watchHistoryController.changeSelectAll();
                 },
-                child: Text(
-                  selectAll,
-                  style: const TextStyle(color: Colors.white),
-                )),
+                child: Obx(() => Text(
+                      watchHistoryController.selectAll.value,
+                      style: const TextStyle(color: Colors.white),
+                    ))),
           ],
         ),
         body: FutureBuilder(
@@ -121,100 +90,98 @@ class _WatchHistoryState extends State<WatchHistory> {
                 // Display an error message if the Future throws an error
                 return Text('Error: ${snapshot.error}');
               } else {
-                return Obx(() => watchHistoryController.noOfWatchHistory.value >
-                        0
+                return Obx(() => watchHistoryController.watchHistory.isNotEmpty
                     ? SingleChildScrollView(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              SizedBox(
-                                height: (selectedVideos.isNotEmpty ||
-                                        isSelectAllClicked)
-                                    ? size.height * 0.8
-                                    : size.height * 0.87,
-                                child: GridView.builder(
-                                    itemCount: watchHistoryController
-                                        .noOfWatchHistory.value,
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: 2,
-                                            mainAxisSpacing: 10,
-                                            crossAxisSpacing: 10),
-                                    itemBuilder: (context, index) {
-                                      return Stack(children: [
-                                        AspectRatio(
-                                          aspectRatio: 9 / 16,
-                                          child: Image.network(
-                                            "$GET_THUMBNAIL_URL/${watchHistory[index]["videoInformation"]['thumbnailName']}",
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        Positioned(
-                                            right: 5,
-                                            bottom: 5,
-                                            child: IconButton(
-                                                onPressed: () {
-                                                  if (isSelectAllClicked) {
-                                                    if (selectedVideos.contains(
-                                                        watchHistory[index][
-                                                                'videoInformation']
-                                                            ['_id'])) {
-                                                      selectedVideos
-                                                          .remove(index);
-                                                    } else {
-                                                      selectedVideos.add(
-                                                          watchHistory[index][
-                                                                  'videoInformation']
-                                                              ['_id']);
-                                                    }
-                                                  } else if (isSelectClicked) {
-                                                    if (selectedVideos.contains(
-                                                        watchHistory[index][
-                                                                'videoInformation']
-                                                            ['_id'])) {
-                                                      selectedVideos.remove(
-                                                          watchHistory[index][
-                                                                  'videoInformation']
-                                                              ['_id']);
-                                                    } else {
-                                                      selectedVideos.add(
-                                                          watchHistory[index][
-                                                                  'videoInformation']
-                                                              ['_id']);
-                                                    }
-                                                  }
+                              Obx(
+                                () => SizedBox(
+                                  height: (watchHistoryController
+                                              .selectedVideos.isNotEmpty ||
+                                          watchHistoryController
+                                              .isSelectAllClicked.value)
+                                      ? size.height * 0.8
+                                      : size.height * 0.87,
+                                  child: GridView.builder(
+                                      itemCount: watchHistoryController
+                                          .watchHistory.length,
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: 2,
+                                              mainAxisSpacing: 10,
+                                              crossAxisSpacing: 10),
+                                      itemBuilder: (context, index) {
+                                        return GestureDetector(
+                                          onTap: () async {
+                                            Map<String, dynamic> currentVideo =
+                                                await initializeVideo(
+                                                    watchHistoryController
+                                                                    .watchHistory[
+                                                                index]
+                                                            ["videoInformation"]
+                                                        ['_id']);
 
-                                                  setState(() {});
-                                                },
-                                                icon: Icon(
-                                                  (isSelectClicked)
-                                                      ? (selectedVideos.contains(
-                                                              watchHistory[
-                                                                          index]
-                                                                      [
-                                                                      'videoInformation']
-                                                                  ['_id'])
-                                                          ? checkedIcon
-                                                          : noCheckedIcon)
-                                                      : ((isSelectAllClicked)
-                                                          ? (selectedVideos.contains(
-                                                                  watchHistory[
-                                                                          index]
-                                                                      [
-                                                                      'videoInformation']['_id'])
-                                                              ? checkedIcon
-                                                              : noCheckedIcon)
-                                                          : null),
-                                                  color: white,
-                                                  size: 35,
-                                                )))
-                                      ]);
-                                    }),
+                                            Get.to(() => ViewOtherVideo(
+                                                  video: currentVideo,
+                                                ));
+                                          },
+                                          child: Stack(
+                                              fit: StackFit.expand,
+                                              children: [
+                                                AspectRatio(
+                                                  aspectRatio: 9 / 16,
+                                                  child: Image.network(
+                                                    "$GET_THUMBNAIL_URL/${watchHistoryController.watchHistory[index]["videoInformation"]['thumbnailName']}",
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                                Positioned(
+                                                    right: 5,
+                                                    bottom: 5,
+                                                    child: IconButton(
+                                                        onPressed: () {
+                                                          watchHistoryController
+                                                              .changeIcon(
+                                                                  watchHistoryController
+                                                                          .watchHistory[
+                                                                      index]);
+                                                        },
+                                                        icon: Obx(() => Icon(
+                                                              (watchHistoryController
+                                                                      .isSelectAllClicked
+                                                                      .value)
+                                                                  ? (watchHistoryController
+                                                                          .selectedVideos
+                                                                          .contains(watchHistoryController.watchHistory[index]['videoInformation']
+                                                                              [
+                                                                              '_id'])
+                                                                      ? watchHistoryController
+                                                                          .checkedIcon
+                                                                      : watchHistoryController
+                                                                          .noCheckedIcon)
+                                                                  : ((watchHistoryController
+                                                                          .isSelectClicked
+                                                                          .value)
+                                                                      ? (watchHistoryController
+                                                                              .selectedVideos
+                                                                              .contains(watchHistoryController.watchHistory[index]['videoInformation']['_id'])
+                                                                          ? watchHistoryController.checkedIcon
+                                                                          : watchHistoryController.noCheckedIcon)
+                                                                      : null),
+                                                              color: white,
+                                                              size: 35,
+                                                            ))))
+                                              ]),
+                                        );
+                                      }),
+                                ),
                               ),
-                              (selectedVideos.isNotEmpty || isSelectAllClicked)
+                              Obx(() => (watchHistoryController
+                                      .selectedVideos.isNotEmpty)
                                   ? showDeleteOption()
-                                  : const Text("")
+                                  : const Text(""))
                             ],
                           ),
                         ),

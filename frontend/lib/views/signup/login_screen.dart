@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
+import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
 import 'package:pro_shorts/views/home_screen/home_screen.dart';
 import 'package:pro_shorts/views/signup/signup_screen.dart';
 import 'package:pro_shorts/views/widgets/snackbar.dart';
@@ -15,20 +17,6 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // void toastError(message) {
-    //   Fluttertoast.showToast(
-    //     msg: message,
-    //     toastLength: Toast.LENGTH_LONG,
-    //     gravity: ToastGravity.TOP,
-    //     timeInSecForIosWeb: 1,
-    //     backgroundColor: Colors.red,
-    //     textColor: Colors.white,
-    //     fontSize: 16.0,
-    //   );
-    // }
-
-    
-
     void login() async {
       String email = emailController.text.trim();
       String password = passwordController.text.trim();
@@ -38,11 +26,8 @@ class LoginScreen extends StatelessWidget {
             email: email, password: password);
 
         if (userCredential.user != null) {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ));
+          await Get.put(FetchProfileController()).fetchMyProfile();
+          Get.off(() => const HomeScreen());
         }
       } on FirebaseAuthException catch (error) {
         showError(error.code, context);
@@ -112,9 +97,9 @@ class LoginScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey),
                       onPressed: () {},
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: const [
+                        children: [
                           FaIcon(FontAwesomeIcons.google),
                           Text("Continue With Google"),
                         ],

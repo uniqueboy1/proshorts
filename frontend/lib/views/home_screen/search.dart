@@ -1,8 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/controllers/users.dart';
+import 'package:pro_shorts/methods/initialize_own_video.dart';
+import 'package:pro_shorts/methods/initialize_video.dart';
+import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/profile/view_other_profile.dart';
 import "package:pro_shorts/get/home_screen/get_search.dart";
+import 'package:pro_shorts/views/video/own_video.dart';
+import 'package:pro_shorts/views/video/view_other_video.dart';
 import '../../constants.dart';
 
 class Search extends StatefulWidget {
@@ -39,7 +46,6 @@ class _SearchState extends State<Search> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -210,7 +216,7 @@ class FilterUser extends StatelessWidget {
                   searchController.highlightSelectedFollowers("low");
                 },
                 child: Obx(() => Chip(
-                  // changing background color when user select option
+                    // changing background color when user select option
                     backgroundColor: searchController.followers.value == "low"
                         ? backgroundColor
                         : backgroundDefaultColor,
@@ -465,6 +471,7 @@ class TopUsers extends StatelessWidget {
   TopUsers({Key? key}) : super(key: key);
   SearchVideoUserController searchController =
       Get.put(SearchVideoUserController());
+
   @override
   Widget build(BuildContext context) {
     return Obx(() => FutureBuilder(
@@ -485,9 +492,13 @@ class TopUsers extends StatelessWidget {
                         itemBuilder: (context, index) {
                           return GestureDetector(
                             onTap: () {
-                              Get.to(() => ViewOtherProfile(
-                                  userInformation:
-                                      searchController.searchedUsers[index]));
+                              Get.to(() => searchController.searchedUsers[index]
+                                          ['email'] !=
+                                      FirebaseAuth.instance.currentUser!.email
+                                  ? ViewOtherProfile(
+                                      userId: searchController
+                                          .searchedUsers[index]['_id'])
+                                  : const OwnProfileScreen());
                             },
                             child: Card(
                               child: Padding(
@@ -574,38 +585,59 @@ class TopVideos extends StatelessWidget {
                           return Column(
                             children: [
                               Expanded(
-                                child: Stack(
-                                  children: [
-                                    AspectRatio(
-                                      aspectRatio: 9 / 16,
-                                      child: Image.network(
-                                        "$GET_THUMBNAIL_URL/${searchController.searchedVideos[index]['thumbnailName']}",
-                                        fit: BoxFit.cover,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    if (MYPROFILE['_id'] ==
+                                        searchController.searchedVideos[index]
+                                            ['userInformation']['_id']) {
+                                      await initializeOwnVideo(searchController
+                                          .searchedVideos[index]['_id']);
+                                      Get.to(() => OwnVideo(
+                                          videoId: searchController
+                                              .searchedVideos[index]['_id']));
+                                    } else {
+                                      Map<String, dynamic> currentVideo =
+                                          await initializeVideo(searchController
+                                              .searchedVideos[index]['_id']);
+
+                                      Get.to(() => ViewOtherVideo(
+                                            video: currentVideo,
+                                          ));
+                                    }
+                                  },
+                                  child: Stack(
+                                    children: [
+                                      AspectRatio(
+                                        aspectRatio: 9 / 16,
+                                        child: Image.network(
+                                          "$GET_THUMBNAIL_URL/${searchController.searchedVideos[index]['thumbnailName']}",
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
-                                    ),
-                                    Positioned(
-                                        right: 0,
-                                        bottom: 0,
-                                        child: ConstrainedBox(
-                                          constraints: const BoxConstraints(
-                                              minWidth: 50, minHeight: 50),
-                                          child: Container(
-                                            color: Colors.black,
-                                            child: Center(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(4.0),
-                                                child: Text(
-                                                  "${searchController.searchedVideos[index]['viewsCount']}",
-                                                  style: const TextStyle(
-                                                      color: white,
-                                                      fontSize: 20),
+                                      Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                                minWidth: 50, minHeight: 50),
+                                            child: Container(
+                                              color: Colors.black,
+                                              child: Center(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(4.0),
+                                                  child: Text(
+                                                    "${searchController.searchedVideos[index]['viewsCount']}",
+                                                    style: const TextStyle(
+                                                        color: white,
+                                                        fontSize: 20),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        )),
-                                  ],
+                                          )),
+                                    ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(
@@ -616,28 +648,41 @@ class TopVideos extends StatelessWidget {
                               const SizedBox(
                                 height: 10,
                               ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                        "$getProfilePhoto/${searchController.searchedVideos[index]['userInformation']['profileInformation']['profilePhoto']}"),
-                                  ),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Column(
-                                    children: [
-                                      Text(
-                                          "${searchController.searchedVideos[index]['userInformation']['profileInformation']['name']}"),
-                                      const SizedBox(
-                                        height: 3,
-                                      ),
-                                      Text(
-                                          "${searchController.searchedVideos[index]['userInformation']['profileInformation']['username']}")
-                                    ],
-                                  )
-                                ],
+                              GestureDetector(
+                                onTap: () {
+                                  Get.to(() => searchController
+                                              .searchedVideos[index]['email'] !=
+                                          FirebaseAuth
+                                              .instance.currentUser!.email
+                                      ? ViewOtherProfile(
+                                          userId: searchController
+                                                  .searchedVideos[index]
+                                              ['userInformation']['_id'])
+                                      : const OwnProfileScreen());
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundImage: NetworkImage(
+                                          "$getProfilePhoto/${searchController.searchedVideos[index]['userInformation']['profileInformation']['profilePhoto']}"),
+                                    ),
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    Column(
+                                      children: [
+                                        Text(
+                                            "${searchController.searchedVideos[index]['userInformation']['profileInformation']['name']}"),
+                                        const SizedBox(
+                                          height: 3,
+                                        ),
+                                        Text(
+                                            "${searchController.searchedVideos[index]['userInformation']['profileInformation']['username']}")
+                                      ],
+                                    )
+                                  ],
+                                ),
                               )
                             ],
                           );

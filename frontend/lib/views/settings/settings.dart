@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:pro_shorts/views/settings/watch_later_history.dart';
 import 'package:pro_shorts/views/settings/account_information.dart';
 import 'package:pro_shorts/views/settings/change_password.dart';
 import 'package:pro_shorts/views/settings/watch_history.dart';
@@ -135,8 +137,10 @@ class _SettingsState extends State<Settings> {
           Card(
             child: ListTile(
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => WatchHistory()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const WatchHistory()));
               },
               title: const Text("Watch History"),
               trailing: const Icon(Icons.history),
@@ -145,8 +149,7 @@ class _SettingsState extends State<Settings> {
           Card(
             child: ListTile(
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => WatchHistory()));
+                Get.to(() => const WatchLaterHistory());
               },
               title: const Text("Watch Later"),
               trailing: const Icon(Icons.watch_later),

@@ -9,8 +9,8 @@ profileRouter.post("/add_profile", profileController.addProfile);
 profileRouter.get("/all_profiles", profileController.allProfiles);
 profileRouter.get("/read_profile/:id", profileController.readProfilesById);
 profileRouter.get(
-  "/read_profile_by_field/:field",
-  profileController.readProfileByField
+  "/read_profile_by_field/:field/:value",
+  profileController.readProfilesByField
 );
 profileRouter.put("/edit_profile/:id", profileController.editProfilesById);
 profileRouter.delete(

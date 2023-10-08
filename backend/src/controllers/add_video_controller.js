@@ -1,3 +1,4 @@
+import users from "../models/users.js";
 import uploaded_videos from "../models/video.js";
 
 class AddVideoController {
@@ -57,9 +58,6 @@ class AddVideoController {
 
   async returnVideoField(req, res) {
     try {
-      // const { populate_field } = req.query;
-      // let populateArray = [];
-      // console.log(populate_field);
       const { search_field, search_value, return_field } = req.params;
       let response = null;
       if (return_field === "comments") {
@@ -82,39 +80,6 @@ class AddVideoController {
           })
           .select(return_field);
       }
-
-      // if (populate_field) {
-      //   if (Array.isArray(populate_field)) {
-      //     for (let path of populate_field) {
-      //       if (path.includes(",")) {
-      //         let fields = path.split(",");
-      //          populateArray.push(populate({
-      //           path: fields[0],
-      //           populate: {
-      //             path: fields[1],
-      //           },
-      //         }));
-      //       } else {
-      //         populateArray.push(populate(populate_field));
-      //       }
-      //     }
-      //   } else {
-      //     if (populate_field.includes(",")) {
-      //       let fields = populate_field.split(",");
-      //       console.log(fields);
-      //       populateArray.push(populate({
-      //         path: fields[0],
-      //         populate: {
-      //           path: fields[1],
-      //         },
-      //       }));
-      //     } else {
-      //       populateArray.push(populate(populate_field));
-      //     }
-      //   }
-      // }
-
-      // console.log(populateArray);
 
       res.json({
         success: true,
@@ -203,6 +168,55 @@ class AddVideoController {
     }
   }
 
+  async checkValueExistInArray(req, res) {
+    console.log("checking value video");
+    try {
+      const { videoId, field, key, checkValue } = req.params;
+      let response = null;
+      if (field == "comments-replies") {
+        response = await uploaded_videos
+          .findOne(
+            {
+              _id: videoId,
+            },
+            {
+              comments: {
+                $elemMatch: {
+                  [key]: checkValue,
+                },
+              },
+            }
+          )
+          .populate({
+            path: "comments.replies.userInformation",
+            populate: {
+              path: "profileInformation",
+            },
+          });
+      } else {
+        response = await uploaded_videos.findOne(
+          {
+            _id: videoId,
+          },
+          {
+            [field]: {
+              $elemMatch: {
+                [key]: checkValue,
+              },
+            },
+          }
+        );
+      }
+      res.json({
+        success: true,
+        message: "Checking value",
+        response,
+      });
+    } catch (error) {
+      res.send({ success: false, message: error });
+    }
+  }
+
   async editVideoById(req, res) {
     try {
       const { id } = req.params;
@@ -228,6 +242,39 @@ class AddVideoController {
           [field]: req.body,
         },
       });
+      res.json({
+        success: true,
+        message: `${field}'s ${req.body} Updated Successfully`,
+        response,
+      });
+    } catch (error) {
+      res.send({ success: false, message: error });
+    }
+  }
+
+  async updateVideoArrayField(req, res) {
+    console.log("update video array field");
+    try {
+      const { videoId, field, updateId } = req.params;
+      console.log(req.body);
+      // here directly assigining req.body reset all the fields so use this technique
+      const updateObject = {};
+      for (const key in req.body) {
+        updateObject[`${field}.$.${key}`] = req.body[key];
+      }
+
+      let response = await uploaded_videos.updateOne(
+        {
+          _id: videoId,
+          [`${field}._id`]: updateId,
+        },
+        {
+          $set: updateObject,
+        },
+        {
+          new: true,
+        }
+      );
       res.json({
         success: true,
         message: `${field}'s ${req.body} Updated Successfully`,
@@ -284,7 +331,83 @@ class AddVideoController {
   async deleteVideoById(req, res) {
     try {
       const { id } = req.params;
-      let response = await uploaded_videos.findByIdAndDelete(id);
+      let response;
+      // removing from watchLater
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            watchLater: {
+              videoInformation: id,
+            },
+          },
+        }
+      );
+      // removing from watchHistory
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            watchHistory: {
+              videoInformation: id,
+            },
+          },
+        }
+      );
+      // removing from likedVideos
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            likedVideos: {
+              videoInformation: id,
+            },
+          },
+        }
+      );
+      // removing from dislikedVideos
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            dislikedVideos: {
+              videoInformation: id,
+            },
+          },
+        }
+      );
+
+      let comments = await uploaded_videos.findById(id).select("comments");
+      console.log(comments);
+
+      let commentsIds = comments.comments.map((comment) => comment._id);
+      console.log(commentsIds);
+
+      // deleting from likedComments
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            likedComments: {
+              $in: commentsIds,
+            },
+          },
+        }
+      );
+
+      // deleting from dislikedComments
+      response = await users.updateMany(
+        {},
+        {
+          $pull: {
+            dislikedComments: {
+              $in: commentsIds,
+            },
+          },
+        }
+      );
+
+      response = await uploaded_videos.findByIdAndDelete(id);
       res.json({
         success: true,
         message: "Video Deleted Successfully",

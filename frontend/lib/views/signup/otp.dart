@@ -10,7 +10,7 @@ import 'package:pro_shorts/views/widgets/otp_mail.dart';
 class OTPPage extends StatefulWidget {
   final String email;
   final String password;
-  OTPPage({Key? key, required this.email, required this.password})
+  const OTPPage({Key? key, required this.email, required this.password})
       : super(key: key);
 
   @override
@@ -59,22 +59,22 @@ class _OTPPageState extends State<OTPPage> {
     showDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(title: Text('Are you Sure ?'), actions: [
+          return AlertDialog(title: const Text('Are you Sure ?'), actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 await sendEmail(widget.email);
-                timer = Timer.periodic(Duration(seconds: 1), (timer) {
+                timer = Timer.periodic(const Duration(seconds: 1), (timer) {
                   startTimer();
                 });
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ]);
         });
@@ -82,7 +82,7 @@ class _OTPPageState extends State<OTPPage> {
 
   @override
   void initState() {
-    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       startTimer();
     });
     // TODO: implement initState
@@ -94,7 +94,7 @@ class _OTPPageState extends State<OTPPage> {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
-          title: Text("OTP Page"),
+          title: const Text("OTP Page"),
           centerTitle: true,
         ),
         body: Center(
@@ -104,19 +104,19 @@ class _OTPPageState extends State<OTPPage> {
                 width: size.width * 0.9,
                 child: Column(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       height: 20,
                     ),
                     Text("OTP has been sent to ${widget.email}"),
-                    SizedBox(
+                    const SizedBox(
                       height: 20,
                     ),
                     TextFormField(
                       controller: otpController,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.output),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.output),
                         labelText: "Enter OTP",
-                        focusedBorder: const OutlineInputBorder(
+                        focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.blue)),
                       ),
                       validator: (value) {
@@ -129,7 +129,7 @@ class _OTPPageState extends State<OTPPage> {
                         return null;
                       },
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 20,
                     ),
                     Align(
@@ -143,7 +143,7 @@ class _OTPPageState extends State<OTPPage> {
                               child: isMailSend
                                   ? Text(
                                       "Resend in : ${getOtpController.timer.value} Seconds")
-                                  : Text("Resend"),
+                                  : const Text("Resend"),
                             ))),
                     ElevatedButton(
                       onPressed: () {
@@ -151,7 +151,7 @@ class _OTPPageState extends State<OTPPage> {
                           createAccount();
                         }
                       },
-                      child: Text("Submit"),
+                      child: const Text("Submit"),
                     )
                   ],
                 ),

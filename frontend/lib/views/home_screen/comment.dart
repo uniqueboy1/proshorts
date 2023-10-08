@@ -1,20 +1,16 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/constants.dart';
 import 'package:pro_shorts/get/home_screen/get_comment.dart';
-import 'package:pro_shorts/get/videos/get_all_videos.dart';
-import 'package:pro_shorts/views/home_screen/view_replies.dart';
-import "package:http/http.dart" as http;
+import 'package:pro_shorts/get/home_screen/get_video_screen.dart';
+import 'package:pro_shorts/get/videos/get_other_video.dart';
+import 'package:pro_shorts/methods/update_comments.dart';
 
 import '../../controllers/video.dart';
-import '../../get/home_screen/get_video_screen.dart';
 
 class Comment extends StatefulWidget {
-  String videoId;
-  Comment({Key? key, required this.videoId}) : super(key: key);
+  final String videoId;
+  const Comment({Key? key, required this.videoId}) : super(key: key);
 
   @override
   State<Comment> createState() => _CommentState();
@@ -22,26 +18,23 @@ class Comment extends StatefulWidget {
 
 class _CommentState extends State<Comment> {
   CommentController commentController = Get.put(CommentController());
-  VideoScreenController videoScreenController =
-      Get.put(VideoScreenController());
   TextEditingController userCommentController = TextEditingController();
   TextEditingController replyTextController = TextEditingController();
-  Map<String, dynamic> myProfile = MYPROFILE;
 
   // working on commenting
 
-  void updateComments() async {
-    await videoScreenController.updateComments(
+  Future updateComments() async {
+    await commentController.updateComments(
         widget.videoId, userCommentController.text.trim());
     userCommentController.clear();
   }
 
-  void deleteComment() async {
-    await videoScreenController.deleteComment(widget.videoId);
+  Future deleteComment() async {
+    await commentController.deleteComment(widget.videoId);
   }
 
   Future fetchAllComments() async {
-    await videoScreenController.fetchAllComments(widget.videoId);
+    await commentController.fetchAllComments(widget.videoId);
   }
 
   // working on replies
@@ -55,6 +48,20 @@ class _CommentState extends State<Comment> {
         widget.videoId, fieldId, "comments", "replies", reply);
   }
 
+  Future<List> fetchReply(String commentId) async {
+    dynamic replies = await VideoMethods().checkValueExistInArray(
+        widget.videoId, "comments-replies", "_id", commentId);
+    replies = replies['comments'][0]['replies'];
+    return replies;
+  }
+
+  @override
+  void initState() {
+    commentController.reset();
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -62,15 +69,13 @@ class _CommentState extends State<Comment> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Obx(() =>
-              Text("${videoScreenController.allComments.length} Comments")),
-          // const Text("500 Comments"),
+          Obx(() => Text("${commentController.allComments.length} Comments")),
           Row(
             children: [
               CircleAvatar(
-                backgroundImage: myProfile['profileInformation'] != null
+                backgroundImage: MYPROFILE['profileInformation'] != null
                     ? NetworkImage(
-                        "$getProfilePhoto/${myProfile['profileInformation']['profilePhoto']}")
+                        "$getProfilePhoto/${MYPROFILE['profileInformation']['profilePhoto']}")
                     : null,
               ),
               const SizedBox(
@@ -82,8 +87,9 @@ class _CommentState extends State<Comment> {
                   decoration: InputDecoration(
                       labelText: "Add a comment",
                       suffixIcon: IconButton(
-                          onPressed: () {
-                            updateComments();
+                          onPressed: () async {
+                            await updateComments();
+                            await updateVideoComments(widget.videoId);
                           },
                           icon: const Icon(Icons.send))),
                   validator: (value) {
@@ -107,56 +113,53 @@ class _CommentState extends State<Comment> {
                   // Display an error message if the Future throws an error
                   return Text('Error: ${snapshot.error}');
                 } else {
-                  return Obx(() => videoScreenController.allComments.isNotEmpty
+                  commentController.isExpanded.value = List.generate(
+                      commentController.allComments.length, (index) => false);
+                  return Obx(() => commentController.allComments.isNotEmpty
                       ? SizedBox(
                           height: size.height * 0.43,
                           width: size.width,
                           child: ListView.builder(
-                              itemCount:
-                                  videoScreenController.allComments.length,
+                              itemCount: commentController.allComments.length,
                               itemBuilder: (context, index) {
                                 return Column(
                                   children: [
                                     Row(
                                       children: [
                                         CircleAvatar(
-                                            backgroundImage: videoScreenController
+                                            backgroundImage: commentController
                                                                     .allComments[
                                                                 index]
                                                             ['userInformation'][
                                                         'profileInformation'] !=
                                                     null
                                                 ? NetworkImage(
-                                                    "$getProfilePhoto/${videoScreenController.allComments[index]['userInformation']['profileInformation']['profilePhoto']}")
+                                                    "$getProfilePhoto/${commentController.allComments[index]['userInformation']['profileInformation']['profilePhoto']}")
                                                 : null),
                                         const SizedBox(
                                           width: 10,
                                         ),
                                         Column(
                                           children: [
-                                            Text(videoScreenController
-                                                                    .allComments[
+                                            Text(commentController.allComments[
                                                                 index]
                                                             ['userInformation'][
                                                         'profileInformation'] !=
                                                     null
-                                                ? videoScreenController
-                                                            .allComments[index]
-                                                        ['userInformation'][
-                                                    'profileInformation']['name']
-                                                : "Unknown"),
-                                            Text(videoScreenController
-                                                                    .allComments[
+                                                ? commentController.allComments[
                                                                 index]
                                                             ['userInformation']
-                                                        [
+                                                        ['profileInformation']
+                                                    ['name']
+                                                : "Unknown"),
+                                            Text(commentController.allComments[
+                                                                index]
+                                                            ['userInformation'][
                                                         'profileInformation'] !=
                                                     null
-                                                ? videoScreenController
-                                                                    .allComments[
+                                                ? commentController.allComments[
                                                                 index]
-                                                            [
-                                                            'userInformation']
+                                                            ['userInformation']
                                                         ['profileInformation']
                                                     ['username']
                                                 : "Unknown")
@@ -164,42 +167,87 @@ class _CommentState extends State<Comment> {
                                         )
                                       ],
                                     ),
-                                    Text(videoScreenController
-                                        .allComments[index]['comment']),
+                                    Text(commentController.allComments[index]
+                                        ['comment']),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
                                       children: [
                                         Row(
                                           children: [
-                                            Text(videoScreenController
+                                            Text(commentController
                                                 .allComments[index]['likeCount']
                                                 .toString()),
                                             IconButton(
-                                                onPressed: () {},
-                                                icon:
-                                                    const Icon(Icons.thumb_up)),
+                                                onPressed: () async {
+                                                  await commentController
+                                                      .changeCommentLike(
+                                                          commentController
+                                                                  .allComments[
+                                                              index]['_id'],
+                                                          widget.videoId);
+
+                                                  await fetchAllComments();
+                                                },
+                                                icon: Obx(() => Icon(
+                                                    Icons.thumb_up,
+                                                    color: commentController
+                                                            .likedComments
+                                                            .any((comment) =>
+                                                                comment[
+                                                                    "commentId"] ==
+                                                                commentController
+                                                                        .allComments[
+                                                                    index]['_id'])
+                                                        ? Colors.blue
+                                                        : Colors.black))),
                                             const SizedBox(
                                               width: 20,
                                             ),
-                                            Text(videoScreenController
+                                            Text(commentController
                                                 .allComments[index]
                                                     ['dislikeCount']
                                                 .toString()),
                                             IconButton(
-                                                onPressed: () {},
-                                                icon: const Icon(
-                                                    Icons.thumb_down)),
+                                                onPressed: () async {
+                                                  await commentController
+                                                      .changeCommentDislike(
+                                                          commentController
+                                                                  .allComments[
+                                                              index]['_id'],
+                                                          widget.videoId);
+
+                                                  await fetchAllComments();
+                                                },
+                                                icon: Obx(() => Icon(
+                                                    Icons.thumb_down,
+                                                    color: commentController
+                                                            .dislikedComments
+                                                            .any((comment) =>
+                                                                comment[
+                                                                    "commentId"] ==
+                                                                commentController
+                                                                        .allComments[
+                                                                    index]['_id'])
+                                                        ? Colors.red
+                                                        : Colors.black))),
                                             const SizedBox(
                                               width: 20,
                                             ),
                                             IconButton(
-                                                onPressed: () {
-                                                  deleteComment();
-                                                  fetchAllComments();
+                                                onPressed: () async {
+                                                  await deleteComment();
+                                                  await fetchAllComments();
+                                                  // changing comments count on individual video and on video screen
+                                                  await updateVideoComments(widget.videoId);
+                                                  
                                                 },
-                                                icon: videoScreenController
-                                                        .isUserAlreadyCommentedVideo
+                                                icon: commentController.isMyComment(
+                                                        commentController
+                                                                        .allComments[
+                                                                    index][
+                                                                'userInformation']
+                                                            ['_id'])
                                                     ? const Icon(
                                                         Icons.delete_forever)
                                                     : const SizedBox()),
@@ -240,8 +288,10 @@ class _CommentState extends State<Comment> {
                                                                     suffixIcon: IconButton(
                                                                         onPressed: () {
                                                                           addReply(
-                                                                              videoScreenController.allComments[index]['_id'],
+                                                                              commentController.allComments[index]['_id'],
                                                                               replyTextController.text.trim());
+                                                                          replyTextController
+                                                                              .clear();
                                                                           Get.back();
                                                                         },
                                                                         icon: const Icon(Icons.send))),
@@ -257,30 +307,94 @@ class _CommentState extends State<Comment> {
                                             child: const Text("Reply")),
                                       ],
                                     ),
-                                    Obx(
-                                      () => FutureBuilder(
-                                          future: commentController
-                                              .fetchReply_.value,
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return const CircularProgressIndicator();
-                                            } else {
-                                              if (snapshot.hasData) {
-                                                return const ViewReplies();
-                                              } else {
-                                                return const SizedBox();
-                                              }
-                                            }
-                                          }),
-                                    ),
-                                    TextButton(
-                                        onPressed: () {
-                                          commentController
-                                              .changeFetchReplyText();
-                                        },
-                                        child: Obx(() => Text(
-                                            "View ${videoScreenController.allComments[index]['replies'].length} Replies")))
+                                    Obx(() =>
+                                        commentController
+                                                .allComments[index]['replies']
+                                                .isNotEmpty
+                                            ? ExpansionTile(
+                                                onExpansionChanged: (value) {
+                                                  if (value) {
+                                                    commentController
+                                                        .changeFetchReplyText(
+                                                            index, value);
+                                                  } else {
+                                                    commentController
+                                                        .changeFetchReplyText(
+                                                            index, value);
+                                                  }
+                                                },
+                                                trailing: const Text(""),
+                                                title: Center(
+                                                  child: Obx(() =>
+                                                      !commentController
+                                                              .isExpanded[index]
+                                                          ? Text(
+                                                              "View ${commentController.allComments[index]['replies'].length} Replies")
+                                                          : const Text(
+                                                              "Hide Replies")),
+                                                ),
+                                                children: [
+                                                  FutureBuilder(
+                                                      future: fetchReply(
+                                                          commentController
+                                                                  .allComments[
+                                                              index]["_id"]),
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (snapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return const CircularProgressIndicator();
+                                                        } else {
+                                                          if (snapshot
+                                                              .hasData) {
+                                                            List replies =
+                                                                snapshot.data!;
+                                                            return Column(
+                                                              children: [
+                                                                ...replies.map(
+                                                                    (reply) {
+                                                                  return ListTile(
+                                                                    title: Row(
+                                                                      children: [
+                                                                        Row(
+                                                                          children: [
+                                                                            CircleAvatar(backgroundImage: reply['userInformation']['profileInformation'] != null ? NetworkImage("$getProfilePhoto/${reply['userInformation']['profileInformation']['profilePhoto']}") : null),
+                                                                            const SizedBox(
+                                                                              width: 10,
+                                                                            ),
+                                                                            Column(
+                                                                              children: [
+                                                                                Text(reply['userInformation']['profileInformation'] != null ? reply['userInformation']['profileInformation']['name'] : "Unknown"),
+                                                                                Text(reply['userInformation']['profileInformation'] != null ? reply['userInformation']['profileInformation']['username'] : "Unknown")
+                                                                              ],
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                        const SizedBox(
+                                                                          width:
+                                                                              30,
+                                                                        ),
+                                                                        Expanded(
+                                                                            child:
+                                                                                Text(reply['reply'])),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                })
+                                                              ],
+                                                            );
+                                                          } else {
+                                                            return const SizedBox();
+                                                          }
+                                                        }
+                                                      }),
+                                                ],
+                                              )
+                                            : const SizedBox(
+                                                height: 10,
+                                              ))
                                   ],
                                 );
                               }),
@@ -288,7 +402,7 @@ class _CommentState extends State<Comment> {
                       : const Expanded(
                           child: Center(child: Text("No any comments"))));
                 }
-              })
+              }),
         ],
       ),
     );

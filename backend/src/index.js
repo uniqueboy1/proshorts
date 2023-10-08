@@ -77,6 +77,48 @@ async function deleteProfilePhoto(req, res) {
 }
 app.delete("/delete_profile_photo/:profile_name", deleteProfilePhoto);
 
+// deleting video thumbnail
+
+async function deleteThumbnail(req, res) {
+  try {
+    const { thumbnail_name } = req.params;
+    let imagePath = `uploads/thumbnails/${thumbnail_name}`;
+    console.log(imagePath);
+    await fs.unlink(imagePath);
+    res.json({
+      success: true,
+      message: "Thumbnail deleted successfully",
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error,
+    });
+  }
+}
+app.delete("/delete_thumbnail/:thumbnail_name", deleteThumbnail);
+
+// deleting video
+
+async function deleteVideo(req, res) {
+  try {
+    const { video_name } = req.params;
+    let imagePath = `uploads/videos/${video_name}`;
+    console.log(imagePath);
+    await fs.unlink(imagePath);
+    res.json({
+      success: true,
+      message: "Video deleted successfully",
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error,
+    });
+  }
+}
+app.delete("/delete_actual_video/:video_name", deleteVideo);
+
 // Set up multer storage to store thumbnail
 const thumbnailStorage = multer.diskStorage({
   destination: (req, file, cb) => {

@@ -4,12 +4,15 @@ import '../../constants.dart';
 
 class AccountInformation extends StatelessWidget {
   AccountInformation({Key? key}) : super(key: key);
-  Map<String, dynamic> myProfile = MYPROFILE;
 
   @override
   Widget build(BuildContext context) {
-    String email = myProfile['email'];
-    String username = myProfile['profileInformation']['username'];
+    String email = MYPROFILE['email'];
+    print("my profile : $MYPROFILE");
+    String? username = null;
+    if (MYPROFILE.containsKey("profileInformation")) {
+      username = MYPROFILE['profileInformation']['username'];
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text("Account Information"),
@@ -28,10 +31,10 @@ class AccountInformation extends StatelessWidget {
           const SizedBox(
             height: 20,
           ),
-          Card(
+          username != null ? Card(
               child: ListTile(
             title: Text("Username : $username"),
-          )),
+          )) : SizedBox()
         ],
       ),
     );

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/constants.dart';
-import 'package:pro_shorts/controllers/users.dart';
 import 'package:pro_shorts/controllers/video.dart';
 import 'package:pro_shorts/get/home_screen/get_home_screen.dart';
 import 'package:pro_shorts/get/home_screen/get_video_screen.dart';
-import 'package:pro_shorts/views/home_screen/search.dart';
+import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
 import 'package:pro_shorts/views/home_screen/video_screen.dart';
-import '../../get/videos/get_all_videos.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,18 +20,21 @@ class _HomeScreenState extends State<HomeScreen> {
   List allVideos = [];
   Future fetchFollowingVideos() async {
     allVideos = await VideoMethods().fetchFollowingVideos(MYPROFILE['_id']);
+    isFirstVideoInitialized = false;
   }
 
-  Future fetchAllVideos() async {
-    allVideos = await VideoMethods().fetchAllVideos();
+  Future fetchPublicVideos() async {
+    allVideos = await VideoMethods().fetchVideosByField("videoMode", "public");
+    isFirstVideoInitialized = false;
   }
 
 // to call initializeVideoDetails for once
   bool isFirstVideoInitialized = false;
   Future initializeVideo(Map<String, dynamic> video, int index) async {
-    String videoPath = video['videoPath'];
     await Get.put(VideoScreenController()).initializeVideo(video);
     if (index == 0 && !isFirstVideoInitialized) {
+      currentVideoId = video['_id'];
+      currentVideoUserId = video['userInformation']["_id"];
       isFirstVideoInitialized = true;
       print("first video");
       initializeVideoDetails(video);
@@ -46,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double appBarHeight = AppBar().preferredSize.height;
-    double bottomNavBarHeight = AppBar().preferredSize.height;
     Size size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
@@ -68,10 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             "Following",
                             style: TextStyle(
                               color: white,
-                              decoration:
-                                  homeScreenController.forYou == "following"
-                                      ? TextDecoration.underline
-                                      : TextDecoration.none,
+                              decoration: homeScreenController.forYou.value ==
+                                      "following"
+                                  ? TextDecoration.underline
+                                  : TextDecoration.none,
                             ),
                           ))),
                   TextButton(
@@ -82,16 +81,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Obx(() => Text(
                             "For You",
                             style: TextStyle(
-                                decoration:
-                                    homeScreenController.forYou == "foryou"
-                                        ? TextDecoration.underline
-                                        : TextDecoration.none,
+                                decoration: homeScreenController.forYou.value ==
+                                        "foryou"
+                                    ? TextDecoration.underline
+                                    : TextDecoration.none,
                                 color: white),
                           ))),
                   IconButton(
                       onPressed: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => Search()));
+                        Get.toNamed("/search");
                       },
                       icon: const Icon(Icons.search))
                 ],
@@ -114,12 +112,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ]),
         body: Obx(() => FutureBuilder(
             future: homeScreenController.forYou.value == "foryou"
-                ? fetchAllVideos()
+                ? fetchPublicVideos()
                 : fetchFollowingVideos(), // The Future<T> that you want to monitor
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 // Display a loading indicator while waiting for the Future to complete
-                return Center(child: const CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 // Display an error message if the Future throws an error
                 return Text('Error: ${snapshot.error}');
@@ -129,6 +127,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPageChanged: (value) {
                           Get.put(VideoScreenController())
                               .initializeVideoDetails(allVideos[value]);
+                          currentVideoId = allVideos[value]['_id'];
+                          currentVideoUserId =
+                              allVideos[value]['userInformation']["_id"];
                         },
                         scrollDirection: Axis.vertical,
                         itemCount: allVideos.length,
@@ -141,8 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
                                   // Display a loading indicator while waiting for the Future to complete
-                                  return Center(
-                                      child: const CircularProgressIndicator());
+                                  return const Center(
+                                      child: CircularProgressIndicator());
                                 } else if (snapshot.hasError) {
                                   // Display an error message if the Future throws an error
                                   return Text('Error: ${snapshot.error}');

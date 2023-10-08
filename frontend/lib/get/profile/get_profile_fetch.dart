@@ -8,14 +8,18 @@ import '../../controllers/profile.dart';
 import '../../controllers/users.dart';
 
 class FetchProfileController extends GetxController {
-  RxList myOwnProfileDetails = [].obs;
+  RxMap myProfile = {}.obs;
   RxBool isProfileSetup = false.obs;
-
-  void fetchOwnProfile() async {
-    myOwnProfileDetails.value = await UserMethods().fetchUsersByField("email", FirebaseAuth.instance.currentUser!.email.toString());
-    print("my own profile details : ${myOwnProfileDetails}");
+  Future fetchMyProfile() async {
+    List users = await UserMethods().fetchUsersByField(
+        "email", FirebaseAuth.instance.currentUser!.email.toString());
+    myProfile.value = users[0];
+    isProfileSetup.value = myProfile.containsKey("profileInformation");
+    print("profile created : ${isProfileSetup.value}");
+    MYPROFILE = myProfile;
   }
-  void profileSetup(){
+
+  void setupProfile() {
     isProfileSetup.value = true;
   }
 }

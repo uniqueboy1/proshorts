@@ -10,13 +10,9 @@ import 'package:video_player/video_player.dart';
 
 class SelectedVideo extends StatefulWidget {
   File videoPath;
-  dynamic videoSize;
   double videoLength;
   SelectedVideo(
-      {super.key,
-      required this.videoPath,
-      required this.videoSize,
-      required this.videoLength});
+      {super.key, required this.videoPath, required this.videoLength});
 
   @override
   State<SelectedVideo> createState() => _SelectedVideoState();
@@ -46,10 +42,11 @@ class _SelectedVideoState extends State<SelectedVideo> {
         actions: [
           TextButton(
               onPressed: () {
+                // pausing current video
+                selectVideoController.controller!.pause();
                 Get.to(() => UploadVideo(
                       videoPath: widget.videoPath,
                       videoLength: widget.videoLength,
-                      videoSize: widget.videoSize,
                     ));
               },
               child: const Text(
@@ -86,16 +83,16 @@ class _SelectedVideoState extends State<SelectedVideo> {
                     ))
                   : const SizedBox(),
             ),
-            Positioned(
+            const Positioned(
               top: 10,
               right: 10,
               child: SizedBox(
-                height: 250,
+                height: 200,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.edit,
                           color: white,
@@ -111,7 +108,7 @@ class _SelectedVideoState extends State<SelectedVideo> {
                       ],
                     ),
                     Column(
-                      children: const [
+                      children: [
                         Text(
                           "Aa",
                           style: TextStyle(
@@ -128,7 +125,7 @@ class _SelectedVideoState extends State<SelectedVideo> {
                       ],
                     ),
                     Column(
-                      children: const [
+                      children: [
                         Icon(
                           FontAwesomeIcons.noteSticky,
                           color: white,
@@ -143,22 +140,6 @@ class _SelectedVideoState extends State<SelectedVideo> {
                         )
                       ],
                     ),
-                    Column(
-                      children: const [
-                        Icon(
-                          Icons.save,
-                          color: white,
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          "Save Video",
-                          style: TextStyle(
-                              color: white, fontWeight: FontWeight.bold),
-                        )
-                      ],
-                    )
                   ],
                 ),
               ),

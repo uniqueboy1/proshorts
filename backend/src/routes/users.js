@@ -16,6 +16,7 @@ usersRouter.get("/read_user_by_field/:field/:value", usersController.readUserByF
 // usersRouter.get("/read_user_by_two_field/:field1/:value1/:field2/:value2", usersController.readUserByTwoField);
 usersRouter.put("/edit_user/:id", usersController.editUserById);
 usersRouter.put("/edit_user_array_field/:id/:field", usersController.editUserArrayField);
+usersRouter.put("/update_array_field/:userId/:field1/:field2/:updateId", usersController.updateArrayField);
 usersRouter.put("/delete_user_array_field/:id/:field", usersController.deleteUserArrayField);
 usersRouter.delete("/delete_user/:id", usersController.deleteUserById);
 usersRouter.get("/search_user", usersController.searchQuery);

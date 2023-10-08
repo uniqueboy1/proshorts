@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:pro_shorts/constants.dart';
 import "package:http/http.dart" as http;
+import 'package:pro_shorts/controllers/profile.dart';
+import 'package:pro_shorts/controllers/video.dart';
 
 import '../views/profile/own_profile_screen.dart';
 
@@ -85,7 +87,6 @@ class UserMethods {
 
       if (actualResponse['success']) {
         print('User updated successfully');
-        FETCHPROFILECONTROLLER.profileSetup();
       } else {
         print('Error: ${actualResponse['message']}');
       }
@@ -138,17 +139,21 @@ class UserMethods {
     }
   }
 
-  Future<List> fetchSpecificUserField(
+  Future<dynamic> fetchSpecificUserField(
       String searchField, String searchValue, String returnField) async {
     try {
       final URL = Uri.parse(
           "$RETURN_USER_FIELD_URL/$searchField/$searchValue/$returnField");
       final response = await http.get(URL);
       final actualResponse = jsonDecode(response.body);
-      return actualResponse['response'][0][returnField];
+      if (actualResponse['response'][0].containsKey(returnField)) {
+        return actualResponse['response'][0][returnField];
+      } else {
+        return null;
+      }
     } catch (error) {
       print("error while fetching specifc user field : $error");
-      return [];
+      return "error";
     }
   }
 
@@ -162,7 +167,79 @@ class UserMethods {
       return actualResponse['response'];
     } catch (error) {
       print("error while checking value in array user field : $error");
-      return null;
+      return "error";
+    }
+  }
+
+  Future updateArrayField(String userId, String field1, String field2,
+      String updateId, Map<String, dynamic> data) async {
+    try {
+      final String apiUrl =
+          '$UPDATE_USER_ARRAY_FIELD_URL/$userId/$field1/$field2/$updateId';
+      final response = await http.put(Uri.parse(apiUrl),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(data));
+
+      final actualResponse = jsonDecode(response.body);
+
+      if (actualResponse['success']) {
+        print('User ${field1} updated successfully');
+      } else {
+        print('Error: ${actualResponse['message']}');
+      }
+    } catch (error) {
+      print("Error while updating ${field1} : $error");
+    }
+  }
+
+  Future<void> deleteUserById(String id) async {
+    try {
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      // getting user information to delete actual videos, thumbnails and profile photo
+      final userURL = Uri.parse("$READ_USER_BY_ID_URL/$id");
+      final user = await http.get(userURL, headers: headers);
+      final actualUser = jsonDecode(user.body)['response'];
+
+      if (actualUser.containsKey("profileInformation")) {
+        String profileName = actualUser['profileInformation']['profileName'];
+        await SetupProfile().deleteProfilePhoto(profileName);
+      }
+
+      List public_videos = actualUser['public_videos'];
+      List private_videos = actualUser['private_videos'];
+
+      for (Map<String, dynamic> video in public_videos) {
+        String thumbnailName = video['videoInformation']['thumbnailName'];
+        String videoPath = video['videoInformation']['videoPath'];
+        await VideoMethods().deleteVideoThumbnail(thumbnailName);
+        await VideoMethods().deleteActualVideo(videoPath);
+      }
+
+      for (Map<String, dynamic> video in private_videos) {
+        String thumbnailName = video['videoInformation']['thumbnailName'];
+        String videoPath = video['videoInformation']['videoPath'];
+        await VideoMethods().deleteVideoThumbnail(thumbnailName);
+        await VideoMethods().deleteActualVideo(videoPath);
+      }
+
+      final URL = Uri.parse("$DELETE_USER_URL/$id");
+
+      final response = await http.delete(URL, headers: headers);
+      final actualResponse = jsonDecode(response.body);
+
+      Map<String, dynamic> videoInformation = {"videoInformation": id};
+
+      if (actualResponse['success']) {
+        print("Video Deleted successfully");
+      } else {
+        print("Error while deleting video : ${actualResponse['message']}");
+      }
+    } catch (error) {
+      print("error while deleting video : $error");
     }
   }
 }

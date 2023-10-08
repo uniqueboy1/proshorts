@@ -9,6 +9,10 @@ import 'package:get/get.dart';
 import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
+import 'package:pro_shorts/constants.dart';
+import 'package:pro_shorts/controllers/users.dart';
+import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/widgets/profile/profile_input.dart';
 import 'package:uuid/uuid.dart';
@@ -31,7 +35,7 @@ class SetupProfileOptions extends StatelessWidget {
   SetupProfileController setupProfileController =
       Get.put(SetupProfileController());
 
-  void addProfile() async {
+  Future addProfile() async {
     String profilePhoto = basename(setupProfileController.image.value);
     profilePhoto = "${const Uuid().v1()}$profilePhoto";
     Map<String, dynamic> profile = {
@@ -47,10 +51,38 @@ class SetupProfileOptions extends StatelessWidget {
     };
     await setupProfile.addProfile(
         profile, setupProfileController.image.value, profilePhoto);
-    Get.snackbar("Profile", "Profile Created Successfully");
-    Get.to(() => OwnProfileScreen());
+    showSnackBar("Profile", "Profile Created Successfully");
+    // profile is set up now
+    Get.put(FetchProfileController()).setupProfile();
   }
 
+  Future<bool> checkUserNameExist() async {
+    List profiles = await SetupProfile()
+        .fetchProfilesByField("username", userNameController.text.trim());
+    if (profiles.isNotEmpty) {
+      return true;
+    }
+    return false;
+  }
+
+  bool isUserNameValid(String username) {
+    // rules
+    // 1. username can have alphabets and numbers
+    // 2. username can have _ , - and . as special characters
+    // 3. minimum length must be 5 and maximum length must be 15
+
+    RegExp forbiddenCharacters = RegExp(r'[^a-zA-Z0-9-._]');
+
+    if (username.length < 5 || username.length > 15) {
+      return false;
+    }
+    if (forbiddenCharacters.hasMatch(username)) {
+      return false;
+    }
+    return true;
+  }
+
+  XFile? selectedImage;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,11 +103,11 @@ class SetupProfileOptions extends StatelessWidget {
                   GestureDetector(
                       onTap: () async {
                         // image_picker for picking image from mobile devices
-                        XFile? selectedImage = await ImagePicker()
+                        selectedImage = await ImagePicker()
                             .pickImage(source: ImageSource.gallery);
                         if (selectedImage != null) {
                           setupProfileController
-                              .displayImage(selectedImage.path);
+                              .displayImage(selectedImage!.path);
                         } else {
                           Get.snackbar(
                               "Profile Photo", "Please select a profile photo");
@@ -111,13 +143,54 @@ class SetupProfileOptions extends StatelessWidget {
                   const SizedBox(
                     height: 10,
                   ),
-                  ProfileInput(
-                    controller: userNameController,
-                    labelText: "Enter username",
-                    prefixIcon: Icons.star,
-                    emptyMessage: "Please enter the username",
-                    suffixIcon: Icons.person_2,
+                  Obx(
+                    () => TextFormField(
+                      controller: userNameController,
+                      decoration: InputDecoration(
+                        focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue)),
+                        labelText: "Enter username",
+                        prefixIcon: const Icon(Icons.star),
+                        prefixIconColor: Colors.red,
+                        helperText:
+                            "Username length {5 - 15} and can have alphabets, numbers, underscore(_), dot(.) and hyphen(-)",
+                        suffixIcon: setupProfileController.isUsernameValid.value
+                            ? const Icon(FontAwesomeIcons.solidCircleCheck)
+                            : const Icon(Icons.error),
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please enter a username";
+                        }
+                        if (!isUserNameValid(value)) {
+                          return "Invalid username";
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        bool isValid = isUserNameValid(value);
+                        setupProfileController.displayError(isValid);
+                      },
+                    ),
                   ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TextButton(
+                      onPressed: () async {
+                        if (userNameController.text.trim().isNotEmpty &&
+                            isUserNameValid(userNameController.text.trim())) {
+                          bool isUsernameExist = await checkUserNameExist();
+                          if (isUsernameExist) {
+                            Get.snackbar("Username",
+                                "${userNameController.text.trim()} is not available");
+                          } else {
+                            Get.snackbar("Username",
+                                "${userNameController.text.trim()} is available");
+                          }
+                        }
+                      },
+                      child: const Text("Check username is available")),
                   const SizedBox(
                     height: 10,
                   ),
@@ -130,7 +203,7 @@ class SetupProfileOptions extends StatelessWidget {
                   const SizedBox(
                     height: 15,
                   ),
-                  Row(children: const [
+                  const Row(children: [
                     Text(
                       "Add social media link",
                     )
@@ -177,9 +250,23 @@ class SetupProfileOptions extends StatelessWidget {
                     height: 10,
                   ),
                   ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          addProfile();
+                          if (selectedImage != null) {
+                            bool isUserNameExist = await checkUserNameExist();
+                            if (!isUserNameExist) {
+                              await addProfile();
+                              Navigator.popUntil(
+                                  context, (route) => route.isFirst);
+                              Get.to(() => const OwnProfileScreen());
+                            } else {
+                              showSnackBar(
+                                  "Username", "Username already exists");
+                            }
+                          } else {
+                            showSnackBar("Profile Photo",
+                                "Please select a profile photo");
+                          }
                         }
                       },
                       child: const Text("Setup Profile"))

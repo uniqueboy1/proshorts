@@ -1,12 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
 import "package:http/http.dart" as http;
 import '../constants.dart';
-import '../views/profile/own_profile_screen.dart';
 
 class VideoMethods {
   void uploadVideo(File videoPath, String videoName) async {
@@ -110,7 +105,7 @@ class VideoMethods {
     }
   }
 
-   Future<List> fetchFollowingVideos(String userId) async {
+  Future<List> fetchFollowingVideos(String userId) async {
     try {
       final URL = Uri.parse("$FOLLOWING_VIDEOS_URL/$userId");
       final response = await http.get(URL);
@@ -122,7 +117,7 @@ class VideoMethods {
     }
   }
 
-  Future<List> fetchSpecificVideosField(
+  Future<dynamic> fetchSpecificVideosField(
       String searchField, String searchValue, String returnField) async {
     try {
       final URL = Uri.parse(
@@ -132,11 +127,11 @@ class VideoMethods {
       return actualResponse['response'][0][returnField];
     } catch (error) {
       print("error while fetching specifc video field : $error");
-      return [];
+      return "error";
     }
   }
 
-  Future<List> fetchVideosByField(String field, String value) async {
+  Future<dynamic> fetchVideosByField(String field, String value) async {
     try {
       final URL = Uri.parse("$READ_VIDEO_BY_FIELD_URL/$field/$value");
       final response = await http.get(URL);
@@ -144,7 +139,79 @@ class VideoMethods {
       return actualResponse['response'];
     } catch (error) {
       print("error while fetching videos : $error");
-      return [];
+      return "error";
+    }
+  }
+
+  Future<void> deleteVideoById(
+      String id, String thumbnailName, String videoPath) async {
+    try {
+      final URL = Uri.parse("$DELETE_VIDEO_URL/$id");
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final response = await http.delete(URL, headers: headers);
+      final actualResponse = jsonDecode(response.body);
+
+      Map<String, dynamic> videoInformation = {"videoInformation": id};
+
+      // deleting from public videos
+      await deleteVideoArrayField(
+          MYPROFILE['_id'], videoInformation, "public_videos");
+
+      // deleting from private videos
+      await deleteVideoArrayField(
+          MYPROFILE['_id'], videoInformation, "private_videos");
+
+      // deleting video thumbnail
+      await deleteVideoThumbnail(thumbnailName);
+
+      // deleting actual video
+      await deleteActualVideo(videoPath);
+
+      if (actualResponse['success']) {
+        print("Video Deleted successfully");
+      } else {
+        print("Error while deleting video : ${actualResponse['message']}");
+      }
+    } catch (error) {
+      print("error while deleting video : $error");
+    }
+  }
+
+  Future<void> deleteActualVideo(String videoName) async {
+    try {
+      final URL = Uri.parse("$DELETE_ACTUAL_VIDEO_URL/$videoName");
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final response = await http.delete(URL, headers: headers);
+      final actualResponse = jsonDecode(response.body);
+      if (actualResponse['success']) {
+        print("Video Deleted successfully");
+      } else {
+        print("Error while deleting video : ${actualResponse['message']}");
+      }
+    } catch (error) {
+      print("error while deleting video : $error");
+    }
+  }
+
+  Future<void> deleteVideoThumbnail(String thumbnailName) async {
+    try {
+      final URL = Uri.parse("$DELETE_THUMBNAIL_URL/$thumbnailName");
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final response = await http.delete(URL, headers: headers);
+      final actualResponse = jsonDecode(response.body);
+      if (actualResponse['success']) {
+        print("Video thumbnail deleted successfully");
+      } else {
+        print("Error while deleting thumbnail : ${actualResponse['message']}");
+      }
+    } catch (error) {
+      print("error while deleting thumbnail : $error");
     }
   }
 
@@ -256,6 +323,29 @@ class VideoMethods {
     }
   }
 
+  Future updateVideoArrayField(String videoId, String field, String updateId,
+      Map<String, dynamic> data) async {
+    try {
+      final String apiUrl =
+          '$UPDATE_VIDEO_ARRAY_FIELD_URL/$videoId/$field/$updateId';
+      final response = await http.put(Uri.parse(apiUrl),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(data));
+
+      final actualResponse = jsonDecode(response.body);
+
+      if (actualResponse['success']) {
+        print('Video ${field} updated successfully');
+      } else {
+        print('Error: ${actualResponse['message']}');
+      }
+    } catch (error) {
+      print("Error while updating ${field} : $error");
+    }
+  }
+
   Future editVideoArrayArrayField(String videoId, String fieldId, String field1,
       String field2, Map<String, dynamic> data) async {
     try {
@@ -298,6 +388,20 @@ class VideoMethods {
       }
     } catch (error) {
       print("Error while deleting ${field} : $error");
+    }
+  }
+
+  Future<dynamic> checkValueExistInArray(
+      String videoId, String field, String key, String checkValue) async {
+    try {
+      final URL = Uri.parse(
+          "$CHECK_VALUE_EXIST_IN_ARRAY_VIDEO_URL/$videoId/$field/$key/$checkValue");
+      final response = await http.get(URL);
+      final actualResponse = jsonDecode(response.body);
+      return actualResponse['response'];
+    } catch (error) {
+      print("error while checking value in array video field : $error");
+      return "error";
     }
   }
 }
