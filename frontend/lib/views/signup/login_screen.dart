@@ -1,13 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
 import 'package:pro_shorts/views/home_screen/home_screen.dart';
 import 'package:pro_shorts/views/signup/signup_screen.dart';
 import 'package:pro_shorts/views/widgets/snackbar.dart';
 import 'package:pro_shorts/views/widgets/text_form_field.dart';
-import '../../constants.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
@@ -91,20 +89,20 @@ class LoginScreen extends StatelessWidget {
                           }
                         },
                         child: const Text("Login"))),
-                SizedBox(
-                  width: 250,
-                  // child: ElevatedButton(
-                  //     style: ElevatedButton.styleFrom(
-                  //         backgroundColor: Colors.grey),
-                  //     onPressed: () {},
-                  //     child:  Row(
-                  //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  //       children: const [
-                  //         FaIcon(FontAwesomeIcons.google),
-                  //         Text("Continue With Google"),
-                  //       ],
-                  //     )),
-                ),
+                // SizedBox(
+                //   width: 250,
+                // child: ElevatedButton(
+                //     style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.grey),
+                //     onPressed: () {},
+                //     child:  Row(
+                //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+                //       children: const [
+                //         FaIcon(FontAwesomeIcons.google),
+                //         Text("Continue With Google"),
+                //       ],
+                //     )),
+                // ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
