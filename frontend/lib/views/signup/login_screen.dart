@@ -93,17 +93,17 @@ class LoginScreen extends StatelessWidget {
                         child: const Text("Login"))),
                 SizedBox(
                   width: 250,
-                  child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey),
-                      onPressed: () {},
-                      child:  Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          FaIcon(FontAwesomeIcons.google),
-                          Text("Continue With Google"),
-                        ],
-                      )),
+                  // child: ElevatedButton(
+                  //     style: ElevatedButton.styleFrom(
+                  //         backgroundColor: Colors.grey),
+                  //     onPressed: () {},
+                  //     child:  Row(
+                  //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  //       children: const [
+                  //         FaIcon(FontAwesomeIcons.google),
+                  //         Text("Continue With Google"),
+                  //       ],
+                  //     )),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
