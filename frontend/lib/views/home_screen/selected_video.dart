@@ -83,7 +83,7 @@ class _SelectedVideoState extends State<SelectedVideo> {
                     ))
                   : const SizedBox(),
             ),
-            const Positioned(
+            Positioned(
               top: 10,
               right: 10,
               child: SizedBox(
@@ -92,7 +92,7 @@ class _SelectedVideoState extends State<SelectedVideo> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
-                      children: [
+                      children: const [
                         Icon(
                           Icons.edit,
                           color: white,
@@ -108,7 +108,7 @@ class _SelectedVideoState extends State<SelectedVideo> {
                       ],
                     ),
                     Column(
-                      children: [
+                      children: const [
                         Text(
                           "Aa",
                           style: TextStyle(

@@ -97,7 +97,7 @@ class LoginScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey),
                       onPressed: () {},
-                      child: const Row(
+                      child:  Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           FaIcon(FontAwesomeIcons.google),

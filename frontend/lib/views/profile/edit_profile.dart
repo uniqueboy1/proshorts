@@ -248,7 +248,7 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
                   const SizedBox(
                     height: 15,
                   ),
-                  const Row(children: [
+                   Row(children: [
                     Text(
                       "Add social media link",
                     )

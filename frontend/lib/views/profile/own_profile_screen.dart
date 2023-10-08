@@ -138,7 +138,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                 return Drawer(
                     child: Column(
                   children: [
-                    const DrawerHeader(
+                    DrawerHeader(
                         child: Column(
                       children: [
                         Text("Recent Notifications"),
