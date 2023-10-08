@@ -57,6 +57,10 @@ dependencies:
   export_video_frame: ^0.0.7
   url_launcher: ^6.1.11
   video_compress: ^3.1.2
+  video_editor: ^3.0.0
+  fraction: ^4.1.4
+  ffmpeg_kit_flutter_min: ^6.0.3
+  tapioca: ^1.0.6+1
 
 dev_dependencies:
   flutter_test:
