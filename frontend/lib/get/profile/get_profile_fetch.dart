@@ -19,6 +19,7 @@ class FetchProfileController extends GetxController {
     MYPROFILE = myProfile;
   }
 
+
   void setupProfile() {
     isProfileSetup.value = true;
   }

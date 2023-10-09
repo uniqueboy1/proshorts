@@ -20,8 +20,6 @@ class UsersController {
 
   async allUsers(req, res) {
     try {
-      // const { populateProfile, populateNice } = req.query;
-      // console.log(populateProfile, populateNice);
       let response = await users
         .find()
         .populate("profileInformation")
@@ -394,9 +392,11 @@ class UsersController {
       const { id } = req.params;
       // deleting profile
       let user = await users.findById(id);
+      console.log("user id", user['profileInformation']);
       let email = user["email"];
-      if (profile.hasOwnProperty("profileInformation")) {
-        await profile.findByIdAndDelete(profile["profileInformation"]);
+      if (user.profileInformation) {
+        console.log("profile information", user);
+        await profile.findByIdAndDelete(user["profileInformation"].toString());
       }
 
       // deleting all videos uploaded by user

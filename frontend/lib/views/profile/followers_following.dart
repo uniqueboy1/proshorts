@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
+import 'package:pro_shorts/get/videos/get_other_video.dart';
 import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/profile/view_other_profile.dart';
 
@@ -251,7 +252,9 @@ class Following extends StatelessWidget {
                                                         MYPROFILE['_id']
                                                   },
                                                   "followers");
-                                          fetchFollowing();
+                                          await fetchFollowing();
+                                          //         await Get.put(OtherVideoController())
+                                          // .changeFollowIcon(user['_id']);
                                         },
                                         child: const Text("Unfollow"))
                                   ],

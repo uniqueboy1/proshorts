@@ -4,7 +4,9 @@ import 'package:pro_shorts/controllers/users.dart';
 import 'package:pro_shorts/controllers/video.dart';
 import 'package:pro_shorts/get/profile/get_own_profile.dart';
 import 'package:pro_shorts/get/videos/get_own_video.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/home_screen/comment.dart';
+import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/video/edit_video_details.dart';
 import 'package:video_player/video_player.dart';
 
@@ -152,17 +154,12 @@ class _EditingOptionsState extends State<EditingOptions> {
   }
 
   Future deleteVideo() async {
-    Map<String, dynamic> videoInformation = {
-      "videoInformation": widget.videoId
-    };
-    VideoMethods videoMethods = VideoMethods();
-    UserMethods userMethods = UserMethods();
-    // await videoMethods.deleteVideoById(widget.videoId);
-    // deleting from public and private videos
-    await userMethods.deleteUserArrayField(
-        MYPROFILE['_id'], videoInformation, "public_videos");
-    await userMethods.deleteUserArrayField(
-        MYPROFILE['_id'], videoInformation, "private_videos");
+    Map<String, dynamic> video = await fetchCurrentVideo();
+    await VideoMethods().deleteVideoById(
+        widget.videoId, video['thumbnailName'], video['videoPath']);
+    showSnackBar("Video", "Video deleted successfully");
+    Navigator.popUntil(context, (route) => route.isFirst);
+    Get.to(() => const OwnProfileScreen());
   }
 
   Future fetchVideoMode() async {
@@ -312,6 +309,7 @@ class _EditingOptionsState extends State<EditingOptions> {
               },
             );
           },
+
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -321,6 +319,45 @@ class _EditingOptionsState extends State<EditingOptions> {
               ),
               Text("Delete Video")
             ],
+
+          child: GestureDetector(
+            onTap: () {
+              showDialog(
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text(
+                          "Are you sure want to delete your video ?"),
+                      content:
+                          const Text("Your video will be permanently deleted"),
+                      actions: [
+                        TextButton(
+                            onPressed: () {
+                              Get.back();
+                              Get.back();
+                            },
+                            child: const Text("Cancel")),
+                        TextButton(
+                            onPressed: () async {
+                              await deleteVideo();
+                            },
+                            child: const Text("Delete")),
+                      ],
+                    );
+                  });
+            },
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.delete_forever),
+                SizedBox(
+                  height: 10,
+                ),
+                Text("Delete Video")
+              ],
+            ),
+
           ),
         ),
       ],

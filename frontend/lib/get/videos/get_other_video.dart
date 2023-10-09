@@ -282,7 +282,8 @@ class OtherVideoController extends GetxController {
 
   /* start : working on report video */
 
-  Rx<OtherVideoReportReason> selectedReportReason = OtherVideoReportReason.notProgramming.obs;
+  Rx<OtherVideoReportReason> selectedReportReason =
+      OtherVideoReportReason.notProgramming.obs;
   void updateReportReason(OtherVideoReportReason reason) {
     selectedReportReason.value = reason;
   }

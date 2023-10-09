@@ -93,7 +93,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // videoScreenController.playVideo();
+    videoScreenController.playVideo();
     countViews();
 
     Size size = MediaQuery.of(context).size;

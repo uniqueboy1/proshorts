@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/constants.dart';
+import 'package:pro_shorts/controllers/users.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/settings/watch_later_history.dart';
 import 'package:pro_shorts/views/settings/account_information.dart';
 import 'package:pro_shorts/views/settings/change_password.dart';
@@ -17,7 +20,7 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   final List<bool> _isExpandedList = [false];
-  void logout() async {
+  Future logout() async {
     try {
       await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushAndRemoveUntil(
@@ -31,10 +34,12 @@ class _SettingsState extends State<Settings> {
     }
   }
 
-  void deleteAccount() async {
+  Future deleteAccount() async {
     User user = FirebaseAuth.instance.currentUser!;
     try {
+      // deleting from firebase account
       await user.delete();
+      await UserMethods().deleteUserById(MYPROFILE['_id']);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (BuildContext context) => SignupScreen(),
@@ -42,10 +47,10 @@ class _SettingsState extends State<Settings> {
         (route) => false,
       );
       // Account deletion successful
-      print('Account deleted successfully');
+      showSnackBar("Account", "Account deleted successfully");
     } catch (e) {
       // Account deletion failed
-      print('Failed to delete account: $e');
+      showSnackBar("Account", "Failed to delete account: $e");
     }
   }
 
@@ -118,8 +123,8 @@ class _SettingsState extends State<Settings> {
                                           },
                                           child: const Text("Cancel")),
                                       TextButton(
-                                          onPressed: () {
-                                            deleteAccount();
+                                          onPressed: () async {
+                                            await deleteAccount();
                                           },
                                           child: const Text("OK")),
                                     ],
