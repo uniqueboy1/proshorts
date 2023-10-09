@@ -95,6 +95,18 @@ class UserMethods {
     }
   }
 
+    Future<dynamic> fetchAllUsers() async {
+    try {
+      final URL = Uri.parse(ALL_USERS_URL);
+      final response = await http.get(URL);
+      final actualResponse = jsonDecode(response.body);
+      return actualResponse['response'];
+    } catch (error) {
+      print("error while fetching all videos : $error");
+      return "error";
+    }
+  }
+
   Future editUserArrayField(
       String id, Map<String, dynamic> data, String field) async {
     try {
@@ -202,10 +214,12 @@ class UserMethods {
       // getting user information to delete actual videos, thumbnails and profile photo
       final userURL = Uri.parse("$READ_USER_BY_ID_URL/$id");
       final user = await http.get(userURL, headers: headers);
-      final actualUser = jsonDecode(user.body)['response'];
+      final tempUser = jsonDecode(user.body);
+      final actualUser = tempUser['response'];
+      print("actual user: $actualUser");
 
       if (actualUser.containsKey("profileInformation")) {
-        String profileName = actualUser['profileInformation']['profileName'];
+        String profileName = actualUser['profileInformation']['profilePhoto'];
         await SetupProfile().deleteProfilePhoto(profileName);
       }
 
@@ -230,8 +244,6 @@ class UserMethods {
 
       final response = await http.delete(URL, headers: headers);
       final actualResponse = jsonDecode(response.body);
-
-      Map<String, dynamic> videoInformation = {"videoInformation": id};
 
       if (actualResponse['success']) {
         print("Video Deleted successfully");

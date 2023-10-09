@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import "package:http/http.dart" as http;
+import 'package:pro_shorts/controllers/users.dart';
 import '../constants.dart';
 
 class VideoMethods {
@@ -156,11 +157,12 @@ class VideoMethods {
       Map<String, dynamic> videoInformation = {"videoInformation": id};
 
       // deleting from public videos
-      await deleteVideoArrayField(
+      UserMethods userMethods = UserMethods();
+      await userMethods.deleteUserArrayField(
           MYPROFILE['_id'], videoInformation, "public_videos");
 
       // deleting from private videos
-      await deleteVideoArrayField(
+      await userMethods.deleteUserArrayField(
           MYPROFILE['_id'], videoInformation, "private_videos");
 
       // deleting video thumbnail

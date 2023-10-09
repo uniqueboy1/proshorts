@@ -10,6 +10,7 @@ import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:pro_shorts/constants.dart';
+import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/profile/own_profile_screen.dart';
 import 'package:pro_shorts/views/widgets/profile/profile_input.dart';
 import 'package:uuid/uuid.dart';
@@ -223,14 +224,14 @@ class _EditProfileOptionsState extends State<EditProfileOptions> {
                           if (tempUsername != userNameController.text.trim()) {
                             bool isUsernameExist = await checkUserNameExist();
                             if (isUsernameExist) {
-                              Get.snackbar("Username",
+                              showSnackBar("Username",
                                   "${userNameController.text.trim()} is not available");
                             } else {
-                              Get.snackbar("Username",
+                              showSnackBar("Username",
                                   "${userNameController.text.trim()} is available");
                             }
                           } else {
-                            Get.snackbar("Username",
+                            showSnackBar("Username",
                                 "${userNameController.text.trim()} is available");
                           }
                         }

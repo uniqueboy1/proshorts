@@ -23,7 +23,8 @@ String currentVideoUserId = "";
 FetchProfileController fetchProfileController =
     Get.put(FetchProfileController());
 
-Map<dynamic, dynamic> MYPROFILE = Get.put(FetchProfileController()).myProfile;
+Map<dynamic, dynamic> MYPROFILE = 
+    Get.put(FetchProfileController()).myProfile;
 
 // video
 const String localVideoPath = "assets/videos/video.mp4";
@@ -65,6 +66,7 @@ const ipAddress = "10.0.2.2";
 
 // users related api
 const ADD_USER_URL = 'http://$ipAddress:$port/users/add_user';
+const ALL_USERS_URL = 'http://$ipAddress:$port/users/all_users';
 const DELETE_USER_URL = 'http://$ipAddress:$port/users/delete_user';
 const UPDATE_USER_ARRAY_FIELD_URL =
     'http://$ipAddress:$port/users/update_array_field';
@@ -75,8 +77,7 @@ const FILTER_USER_URL = 'http://$ipAddress:$port/users/filter_user';
 const TOP_USER_URL = 'http://$ipAddress:$port/users/top_user';
 const READ_USER_BY_FIELD_URL =
     'http://$ipAddress:$port/users/read_user_by_field';
-const READ_USER_BY_ID_URL =
-    'http://$ipAddress:$port/users/read_user';
+const READ_USER_BY_ID_URL = 'http://$ipAddress:$port/users/read_user';
 const EDIT_USER_URL = 'http://$ipAddress:$port/users/edit_user';
 const EDIT_USER_ARRAY_FIELD_URL =
     'http://$ipAddress:$port/users/edit_user_array_field';

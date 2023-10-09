@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/admin/admin_screen.dart';
 import 'package:pro_shorts/views/signup/login_screen.dart';
 import '../../constants.dart';
 import '../../get/profile/get_profile_fetch.dart';
-import '../../get/videos/get_all_videos.dart';
 import '../home_screen/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
     Timer(const Duration(seconds: 2), () {
       Get.off(() => FirebaseAuth.instance.currentUser != null
-          ? const HomeScreen()
+          ? ((FirebaseAuth.instance.currentUser!.email == "admin@gmail.com") ? AdminScreen() : HomeScreen())
           : LoginScreen());
     });
     super.initState();

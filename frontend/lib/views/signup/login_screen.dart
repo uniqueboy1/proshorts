@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:pro_shorts/admin/admin_screen.dart';
+import 'package:pro_shorts/controllers/users.dart';
 import 'package:pro_shorts/get/profile/get_profile_fetch.dart';
 import 'package:pro_shorts/views/home_screen/home_screen.dart';
 import 'package:pro_shorts/views/signup/signup_screen.dart';
@@ -17,7 +19,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void login() async {
+    Future login() async {
       String email = emailController.text.trim();
       String password = passwordController.text.trim();
       FirebaseAuth auth = FirebaseAuth.instance;
@@ -25,9 +27,13 @@ class LoginScreen extends StatelessWidget {
         UserCredential userCredential = await auth.signInWithEmailAndPassword(
             email: email, password: password);
 
-        if (userCredential.user != null) {
+        if (userCredential.user != null &&
+            userCredential.user!.email == "admin@gmail.com") {
           await Get.put(FetchProfileController()).fetchMyProfile();
-          Get.off(() => const HomeScreen());
+          Get.offAll(() => const AdminScreen());
+        } else {
+          await Get.put(FetchProfileController()).fetchMyProfile();
+          Get.offAll(() => const HomeScreen());
         }
       } on FirebaseAuthException catch (error) {
         showError(error.code, context);
@@ -85,26 +91,12 @@ class LoginScreen extends StatelessWidget {
                 SizedBox(
                     width: 150,
                     child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            login();
+                            await login();
                           }
                         },
                         child: const Text("Login"))),
-                SizedBox(
-                  width: 250,
-                  child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey),
-                      onPressed: () {},
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          FaIcon(FontAwesomeIcons.google),
-                          Text("Continue With Google"),
-                        ],
-                      )),
-                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

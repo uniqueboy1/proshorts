@@ -89,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ))),
                   IconButton(
                       onPressed: () {
+                        Get.put(VideoScreenController()).controller.pause();
                         Get.toNamed("/search");
                       },
                       icon: const Icon(Icons.search))
@@ -99,6 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: BottomNavigationBar(
             onTap: (index) {
+              Get.put(VideoScreenController()).controller.pause();
+
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => bottomNavBar[index]));
             },

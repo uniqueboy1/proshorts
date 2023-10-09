@@ -182,10 +182,10 @@ class SetupProfileOptions extends StatelessWidget {
                             isUserNameValid(userNameController.text.trim())) {
                           bool isUsernameExist = await checkUserNameExist();
                           if (isUsernameExist) {
-                            Get.snackbar("Username",
+                            showSnackBar("Username",
                                 "${userNameController.text.trim()} is not available");
                           } else {
-                            Get.snackbar("Username",
+                            showSnackBar("Username",
                                 "${userNameController.text.trim()} is available");
                           }
                         }
