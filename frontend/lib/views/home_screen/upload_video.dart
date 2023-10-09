@@ -135,7 +135,7 @@ class _UploadVideoState extends State<UploadVideo> {
         title: const Text("Video details"),
       ),
       body: isVideoUploading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

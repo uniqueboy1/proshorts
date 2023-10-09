@@ -8,6 +8,8 @@ import 'package:pro_shorts/methods/show_snack_bar.dart';
 import 'package:pro_shorts/views/home_screen/selected_video.dart';
 import 'package:video_player/video_player.dart';
 
+import '../editor/editor_screen.dart';
+
 class AddVideo extends StatefulWidget {
   AddVideo({Key? key}) : super(key: key);
 
