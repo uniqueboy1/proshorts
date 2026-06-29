@@ -33,7 +33,7 @@ class _OTPPageState extends State<OTPPage> {
       if (userCredential.user != null) {
         Map<String, dynamic> user = {"email": widget.email};
         await UserMethods().addUser(user);
-        Get.to(LoginScreen());
+        Get.off(LoginScreen());
       }
     } on FirebaseAuthException catch (error) {
       print(error);

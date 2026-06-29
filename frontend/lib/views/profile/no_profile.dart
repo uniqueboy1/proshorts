@@ -96,7 +96,7 @@ class _NoProfileScreenState extends State<NoProfileScreen> {
                     const SizedBox(
                       height: 20,
                     ),
-                    const Row(
+                     Row(
                       children: [
                         SizedBox(
                           width: 10,

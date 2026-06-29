@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:pro_shorts/admin/admin_screen.dart';
 import 'package:pro_shorts/controllers/users.dart';
@@ -9,7 +8,6 @@ import 'package:pro_shorts/views/home_screen/home_screen.dart';
 import 'package:pro_shorts/views/signup/signup_screen.dart';
 import 'package:pro_shorts/views/widgets/snackbar.dart';
 import 'package:pro_shorts/views/widgets/text_form_field.dart';
-import '../../constants.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});

@@ -62,7 +62,7 @@ List videoVisibility = [
 
 // api endpoint
 const port = 8000;
-const ipAddress = "10.0.2.2";
+const ipAddress = "192.168.101.143";
 
 // users related api
 const ADD_USER_URL = 'http://$ipAddress:$port/users/add_user';

@@ -179,7 +179,7 @@ class _EditingOptionsState extends State<EditingOptions> {
                   video: video,
                 ));
           },
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.edit),
@@ -272,7 +272,7 @@ class _EditingOptionsState extends State<EditingOptions> {
                       });
                 }));
           },
-          child: const Column(
+          child:  Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.lock),

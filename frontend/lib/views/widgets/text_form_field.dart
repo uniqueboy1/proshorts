@@ -92,7 +92,7 @@ class _InputTextFormFieldState extends State<InputTextFormField> {
         labelText: widget.labelText,
         prefixIcon: Icon(widget.icon),
         helperText: widget.labelText == "Password"
-            ? "Length >= 10, Capital >= 3, Special Symbol >= 3, Small Letter >= 2 and Numbers >= 2"
+            ? "Length >= 10, Caps >= 3, Special >= 3, Lowercase >= 2 and Numbers >= 2"
             : "",
         prefixIconColor: red,
         suffixIcon: IconButton(

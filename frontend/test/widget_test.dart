@@ -1,30 +1,71 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
 
-import 'package:pro_shorts/main.dart';
+class Home extends StatefulWidget {
+  @override
+  State<Home> createState() => _HomeState();
+}
 
-void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+class _HomeState extends State<Home> {
+  File? video;
+  bool isPlaying = false;
+  Icon icon = Icon(Icons.pause);
+  VideoPlayerController? controller;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  void pickVideo() async{
+    ImagePicker videoPicker = ImagePicker();
+    XFile? selectedVideo = await videoPicker.pickVideo(source: ImageSource.camera, maxDuration: Duration(minutes: 1));
+    if(selectedVideo != null){
+      video = File(selectedVideo.path);
+      controller = VideoPlayerController.file(video!);
+      await controller!.initialize();
+      await controller!.play();
+      setState(() {
+        isPlaying = true;
+      });
+    }
+  }
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: Text("Home Page"),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            (video != null) ? AspectRatio(
+              aspectRatio: controller!.value.aspectRatio,
+              child: VideoPlayer(controller!),
+              ) : Container(),
+            ElevatedButton(onPressed: () {
+              pickVideo();
+            }, child: Text("Select Video From Camera")),
+            (video != null) ? IconButton(onPressed: () async{
+              if(isPlaying){
+                isPlaying = false;
+                await controller!.pause();
+                icon = Icon(Icons.play_arrow);
+              }
+              else{
+                isPlaying = true;
+                await controller!.play();
+                icon = Icon(Icons.pause);
+      
+              }
+              setState(() {
+                
+              });
+            }, icon: icon) : Text("")
+          ],
+        ),
+      )
+    );
+  }
 }

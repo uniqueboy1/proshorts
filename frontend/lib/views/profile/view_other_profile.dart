@@ -206,7 +206,7 @@ class _ViewOtherProfileState extends State<ViewOtherProfile> {
                     const SizedBox(
                       height: 10,
                     ),
-                    const Row(
+                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Padding(

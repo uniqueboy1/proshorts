@@ -203,7 +203,7 @@ class SetupProfileOptions extends StatelessWidget {
                   const SizedBox(
                     height: 15,
                   ),
-                  const Row(children: [
+                   Row(children: [
                     Text(
                       "Add social media link",
                     )
